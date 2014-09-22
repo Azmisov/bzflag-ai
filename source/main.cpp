@@ -3,9 +3,35 @@
 #include <vector>
 #include "Vector2d.h"
 #include "Polygon.h"
+#include "Tank.h"
+#include "Flag.h"
+#include "Protocol.h"
+
+using namespace std;
+
+GameConstants gc;
+Polygon base;
+vector<Tank*> tanks;
+vector<Flag*> flags;
+vector<Tank*> enemy_tanks;
+vector<Flag*> enemy_flags;
+vector<Polygon*> obstacles;
 
 int main(int argc, char** argv){
-	std::vector<Polygon*> obstacles;
+	//Connect to the server
+	Protocol p = Protocol("localhost", 50100);
+	if (!p.isConnected){
+		cout << "Can't connect to BZRC server." << endl;
+		exit(1);
+	}
+	
+	//Initialize the board
+	p.initialBoard(gc, base, tanks, flags, enemy_tanks, enemy_flags, obstacles);
+	
+	return 0;
+}
+
+void graphFields(){
 	Polygon p1 = Polygon();
 	p1.addPoint(0, 0);
 	p1.addPoint(.2,.5);
@@ -54,6 +80,4 @@ int main(int argc, char** argv){
 	}
 	//Close plot file
 	fclose(f);
-	
-	return 0;
 }

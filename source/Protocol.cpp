@@ -176,7 +176,15 @@ void Protocol::printLine() {
 	
 //Tank commands
 bool Protocol::shoot(int idx){
-	
+	// Perform a shoot request.
+	char char_buff[20];
+	sprintf(char_buff, "shoot %d", index);	
+	string str_buff = "shoot";
+	str_buff.append(char_buff);
+	const char *command = str_buff.c_str();
+	sendLine(command);
+	readAck();
+	return readBool();
 }
 bool Protocol::speed(int idx, double val){
 	
