@@ -1,5 +1,9 @@
 #include "Tank.h"
 
+Tank::Tank(int i){
+	idx = i;
+}
+
 void Tank::evalPfield(vector<Obstacle> obstacles)
 {
 	double pi = 3.1415926435;

@@ -13,7 +13,7 @@ Protocol::~Protocol(){
 }
 
 /// Establish connection to server; NOTE: I did not write any of this code
-int Protocol::init(){
+bool Protocol::init(){
 	resetReplyBuffer();
 	start = 0;
 
@@ -66,13 +66,13 @@ bool Protocol::sendLine(const char *line) {
 	if (DEBUG) cout << command;
 	return send(sd, command, length+1, 0) < 0;
 }
-int Protocol::readReply(char *reply){
+bool Protocol::readReply(char *reply){
 	char acreadBuffer[kBufferSize];
 	int nNewBytes = recv(sd, acreadBuffer, kBufferSize, 0);
 	if (nNewBytes < 0) return -1;
 	else if (nNewBytes == 0) {
 		cerr << "Connection closed by peer." << endl;
-		return 0;
+		return false;
 	}
 	memcpy(reply, &acreadBuffer, nNewBytes);
 	if (nNewBytes!=kBufferSize)
@@ -294,14 +294,14 @@ bool Protocol::initialBoard(
 		//We only care about our own base; don't store other players' bases
 		if (v.at(1) == gc.mycolor){
 			for (int i=2; i<v.size(); i+=2){
-				base->addPoint(
+				base.addPoint(
 					atof(v.at(i).c_str()),
 					atof(v.at(i+1).c_str())
 				);
 			}
 		}
 		v.clear();
-		v = ReadArr();
+		v = readArr();
 	}
 	if (v.at(0) != "end")
 		return false;

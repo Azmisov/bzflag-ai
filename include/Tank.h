@@ -1,9 +1,14 @@
 #ifndef TANK_H
 #define	TANK_H
 
+#include <vector>
+#include <math.h>
 #include "Vector2d.h"
 #include "Protocol.h"
-#include <math.h>
+
+class Protocol;
+
+using namespace std;
 
 //These are the only states we're allowed to use for tanks
 enum TankMode {
@@ -29,7 +34,7 @@ public:
 	double vel_angular;
 	
 	Tank();
-	Tank(int i){idx=i};
+	Tank(int i);
 	Tank(const Tank& orig);
 	virtual ~Tank();
 	

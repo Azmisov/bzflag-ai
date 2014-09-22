@@ -1,5 +1,5 @@
-#ifndef POLYGON_H
-#define	POLYGON_H
+#ifndef OBSTACLE_H
+#define	OBSTACLE_H
 
 #include <vector>
 #include <math.h>
