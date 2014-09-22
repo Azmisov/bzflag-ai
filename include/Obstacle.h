@@ -17,6 +17,7 @@ class Obstacle {
 private:
 	double area_cache;
 	std::vector<Vector2d> vertices;
+	bool attractive = true;
 	
 public:
 	Obstacle();
