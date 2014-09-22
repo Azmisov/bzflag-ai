@@ -1,59 +1,21 @@
 #include "Protocol.h"
 
-Protocol(const char *host, int port);
-virtual ~Protocol();
+Protocol::Protocol(const char* hostname, int port){
+	this->hostname = hostname;
+	this->port = port;
+	if (init()) {
+		cout << "BZRC initialization failed; could not esetablish server connection" << endl;
+		close();
+	}
+}
+Protocol::~Protocol(){
+	close();
+}
 
 /// Establish connection to server; NOTE: I did not write any of this code
 int Protocol::init(){
 	resetReplyBuffer();
 	start = 0;
-
-#ifdef WINDOWS
-
-	//start up WinSock
-	LPWSADATA lpmyWSAData;
-	WORD VersionReqd;
-	VersionReqd = MAKEWORD(2,0);
-	lpmyWSAData = (LPWSADATA) malloc(sizeof(WSADATA));
-	if ((int err = WSAstartup(VersionReqd, lpmyWSAData)) != 0){
-		cerr << "WSAstartup() returned error code " << err << "." << endl;
-		return 1;
-	}
-	if (LOBYTE(lpmyWSAData->wVersion) != 2 || HIBYTE(lpmyWSAData->wVersion) != 0) {
-		WSACleanup();
-		free(lpmyWSAData);
-		return 0;
-	}
-	free(lpmyWSAData);
-	
-	//Find server's address
-	u_long nRemoteAddr = inet_addr(pcHost);
-	if (nRemoteAddr == INADDR_NONE) {
-		// pcHost isn't a dotted IP, so resolve it through DNS
-		hostent* pHE = gethostbyname(pcHost);
-		if (!pHE){
-			cerr << "Host cannot be found." << endl;
-			return 1;
-		}
-		else nRemoteAddr = *((u_long*)pHE->h_addr_list[0]);
-	}
-	
-	//Establish the connection
-	// Create a stream socket
-	sd = socket(AF_INET, SOCK_STREAM, 0);
-	if (sd != INVALID_SOCKET) {
-		sockaddr_in sinRemote;
-		sinRemote.sin_family = AF_INET;
-		sinRemote.sin_addr.s_addr = nRemoteAddr;
-		sinRemote.sin_port = htons(nPort);
-		//Invalid socket
-		if (connect(sd, (sockaddr*)&sinRemote, sizeof(sockaddr_in)) == SOCKET_ERROR) {
-			cerr << WSAGetLastError() << endl;
-			return 1;
-		}
-	}
-
-#else
 
 	struct addrinfo *infop = NULL;
 	struct addrinfo hint;
@@ -61,35 +23,44 @@ int Protocol::init(){
 	hint.ai_family = AF_INET;
 	hint.ai_socktype = SOCK_STREAM;
 	char port[10];
-	snprintf(port, 10, "%d", nPort);
-	if (getaddrinfo(pcHost, port, &hint, &infop) != 0) {
+	snprintf(port, 10, "%d", port);
+	if (getaddrinfo(hostname, port, &hint, &infop) != 0) {
 		perror("Couldn't lookup host.");
-		return 1;
+		return false;
 	}
 	if ((sd = socket(infop->ai_family, infop->ai_socktype, infop->ai_protocol)) < 0){
 		perror("Couldn't create socket.");
-		return 1;
+		return false;
 	}
 	if (connect(sd, infop->ai_addr, infop->ai_addrlen) < 0) {
 		perror("Couldn't connect.");
-		//close(sd);
+		close();
+		return false;
 	}
 	freeaddrinfo(infop);
 	
-#endif
-
 	if (handshake()){
 		cerr << "Handshake failed!" << endl;
-		return 1;
+		return false;
 	}
-	return 0;
+	initialized = true;
+	return true;
+}
+bool Protocol::isConnected(){
+	return initialized;
+}
+bool Protocol::close(){
+	// this line won't compile on linux.
+	//close(sd);
+	return true;
 }
 
+
 /// Communicate with the server; NOTE: I did not write any of this code
-int Protocol::sendLine(const char *line) {
-	int length = (int) strlen(LineText);
+bool Protocol::sendLine(const char *line) {
+	int length = (int) strlen(line);
 	char command[kBufferSize];
-	strcpy(command, LineText);
+	strcpy(command, line);
 	command[length] = '\n';
 	command[length+1] = '\0';
 	if (DEBUG) cout << command;
@@ -147,7 +118,7 @@ void Protocol::resetReplyBuffer() {
 	memset(ReplyBuffer, '\0', kBufferSize);
 	LineFeedPos = -1;
 }
-int Protocol::handshake() {
+bool Protocol::handshake() {
 	char str[kBufferSize];
 	char *LineText;
 	LineText = str;
@@ -158,9 +129,9 @@ int Protocol::handshake() {
 		int temp = sendLine(Command);
 		if(temp == 1)  return 1;
 		else resetReplyBuffer();
-		return 0;
+		return false;
 	}
-	return 1;
+	return true;
 }
 vector<string> Protocol::readArr() {
 	char str[kBufferSize];
@@ -191,12 +162,10 @@ bool Protocol::readBool() {
 		return true;
 	else if (v.at(0) == "fail"){
 		if (DEBUG) cout << "Received fail. Exiting!" << endl;
-		return false;
 	}
-	else {
-		if (DEBUG) cout << "Something went wrong. Exiting!" << endl;
-		return false;
-	}
+	else if (DEBUG)
+		cout << "Something went wrong. Exiting!" << endl;
+	return false;
 }
 void Protocol::printLine() {
 	char str[kBufferSize];
@@ -204,57 +173,166 @@ void Protocol::printLine() {
 	readLine(LineText);
 	if (DEBUG) cout << LineText << endl;
 }
-
-// Self check
-int Protocol::getPort(){
-	
-}
-const char* Protocol::getHost(){
-	
-}
-bool Protocol::getStatus(){
-	
-}
 	
 //Tank commands
-bool Protocol::shoot(int index){
+bool Protocol::shoot(int idx){
 	
 }
-bool Protocol::speed(int index, double value){
+bool Protocol::speed(int idx, double val){
 	
 }
-bool Protocol::angvel(int index, double value){
+bool Protocol::angvel(int idx, double val){
 	
 }
-bool Protocol::accelx(int index, double value){
+bool Protocol::accelx(int idx, double val){
 	
 }
-bool Protocol::accely(int index, double value){
+bool Protocol::accely(int idx, double val){
 	
 }
 
 //Fetch information
-bool Protocol::getBases(vector <base_t> *AllBases){
+bool Protocol::initialBoard(
+	GameConstants &gc,
+	Polygon &base,
+	vector<Tank*> &tanks,
+	vector<Flag*> &flags,
+	vector<Tank*> &enemy_tanks,
+	vector<Flag*> &enemy_flags,
+	vector<Polygon*> &obstacles
+){
+	//Request a dictionary of game constants
+	sendLine("constants");
+	readAck();
+	vector<string> v = readArr();
+	if (v.at(0)!="begin")
+		return false;
+	v.clear();
+	v = readArr();
+	while (v.at(0) == "constant"){
+		string &name = v.at(1);
+		string val = v.at(2);
+		double dval = atof(val.c_str());
+		//Yeah, this is inefficient; but we only run it once
+		if (name == "team") gc.mycolor = val;
+		else if (name == "tankalive") gc.tankalive = val;
+		else if (name == "tankdead") gc.tankdead = val;
+		else if (name == "worldsize") gc.worldsize = dval;
+		else if (name == "tankradius") gc.tankradius = dval;
+		else if (name == "tankangvel") gc.tankangvel = dval;
+		else if (name == "tankspeed") gc.tankspeed = dval;
+		else if (name == "linearaccel") gc.linearaccel = dval;
+		else if (name == "angularaccel") gc.angularaccel = dval;
+		else if (name == "shotradius") gc.shotradius = dval;
+		else if (name == "shotrange") gc.shotrange = dval;
+		else if (name == "shotspeed") gc.shotspeed = dval;
+		else if (name == "flagradius") gc.flagradius = dval;
+		v.clear();
+		v = readArr();
+	}
+	if (v.at(0) != "end")
+		return false;
 	
-}
-bool Protocol::getTeams(vector <team_t> *AllTeams){
+	//Get a list of teams to populate tank/enemy vectors
+	sendLine("teams");
+	readAck();
+	v = readArr();
+	if (v.at(0) != "begin")
+		return false;
+	v.clear();
+	v = readArr();
+	while (v.at(0) == "team"){
+		int count = atoi(v.at(2).c_str());
+		//This is our team
+		if (v.at(1) == gc.mycolor){
+			for (int idx=0; idx<count; idx++)
+				tanks.push_back(new Tank(idx));
+		}
+		//This is the enemy
+		else{
+			for (int idx=0; idx<count; idx++)
+				enemy_tanks.push_back(new Tank(-1));
+		}
+		v.clear();
+		v = readArr();
+	}
+	if (v.at(0) != "end")
+		return false;
 	
-}
-bool Protocol::getObstacles(vector <obstacle_t> *AllObstacles){
+	//Get a list of obstacles
+	sendLine("obstacles");
+	readAck();
+	v = readArr();
+	if (v.at(0) != "begin")
+		return false;
+	v.clear();
+	v = readArr();
+	while (v.at(0) == "obstacle"){
+		Polygon *p = new Polygon();
+		for (int i=1; i<v.size(); i+=2){
+			p->addPoint(
+				atof(v.at(i).c_str()),
+				atof(v.at(i+1).c_str())
+			);
+		}
+		obstacles.push_back(p);
+		v.clear();
+		v = readArr();
+	}
+	if (v.at(0) != "end")
+		return false;
 	
-}
-bool Protocol::getFlags(vector <flag_t> *AllFlags){
+	//Get our base
+	sendLine("bases");
+	readAck();
+	v = readArr();
+	if (v.at(0) != "begin")
+		return false;
+	v.clear();
+	v = readArr();
+	while (v.at(0) == "base"){
+		//We only care about our own base; don't store other players' bases
+		if (v.at(1) == gc.mycolor){
+			for (int i=2; i<v.size(); i+=2){
+				base->addPoint(
+					atof(v.at(i).c_str()),
+					atof(v.at(i+1).c_str())
+				);
+			}
+		}
+		v.clear();
+		v = ReadArr();
+	}
+	if (v.at(0) != "end")
+		return false;
 	
+	//Get a list of flags
+	sendLine("flags");
+	readAck();
+	v = readArr();
+	if (v.at(0) != "begin")
+		return false;
+	v.clear();
+	v = readArr();
+	while (v.at(0) == "flag"){
+		if (v.at(1) == gc.mycolor)
+			flags.push_back(new Flag());
+		else enemy_flags.push_back(new Flag());		
+		v.clear();
+		v = readArr();
+	}
+	if (v.at(0) != "end")
+		return false;
+		
+	//Hooray, no errors!!
+	return true;
 }
-bool Protocol::getShots(vector <shot_t> *AllShots){
-	
-}
-bool Protocol::getTanks(vector <tank_t> *AllMyTanks){
-	
-}
-bool Protocol::getOpponents(vector <otank_t> *AllOtherTanks){
-	
-}
-bool Protocol::getConstants(vector <constant_t> *AllConstants){
+bool Protocol::updateBoard(
+	vector<Tank*> &tanks,
+	vector<Flag*> &flags,
+	vector<Tank*> &enemy_tanks,
+	vector<Flag*> &enemy_flags
+	//vector<Shot*> &shots
+){
 	
 }
