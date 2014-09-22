@@ -1,0 +1,30 @@
+TODO LIST
+=====================
+- intersection code for polys (poly to poly, poly to ray)
+	- ignore tanks that are not visible to bullet ray
+	- do not shoot at self tanks if friendly fire is enabled
+- bullet potential fields:
+	- give each bullet a tank_size*3 radius
+	- average two intersecting bullets into a single bullet with double the influence
+	- line potential field that extends from 
+- tank follow potential fields
+- for tanks assigned to retreive flags, attack opponents based on a cone extending from tank's desired direction;
+	angle of cone decreases as tank nears goal; attack the opponent that changes direction the least and
+			     
+			 	   \		O
+			 X		\
+		GOAL		 TANK
+				 X  /
+			       /  O
+
+- join polys that are within tank size (probably not needed, given maps we're using)
+- prune dead ends from map
+	- could use convex hull, but it isn't very robust; probably will work for maps we're using though
+	- triangulate negative space of map; use ear clipping algorithm to remove dead ends
+- potential field for how "visible" the tank is to others
+		- spying (flag retrieval): minimize visibility
+		- offense: maximize visibility within range around the spy
+		- defense: maximize visibility within range around the flag
+- fields for stategically advantageous positions on map?
+- initially, we could set all tanks to DEFENSE mode; then, after a certain amount of time
+	we could send out search parties to attack the base that has the least defenses

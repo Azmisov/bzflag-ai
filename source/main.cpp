@@ -32,11 +32,11 @@ int main(int argc, char** argv){
 	fprintf(f, "unset arrow\n");
 	for (int p=0; p<obstacles.size(); p++){
 		Polygon *poly = obstacles[p];
-		int len = poly->vertices.size();
-		Vector2d v2 = poly->vertices[len-1], v1;
+		int len = poly->size();
+		Vector2d v2 = (*poly)[len-1], v1;
 		for (int i=0; i<len; i++){
 			v1 = v2;
-			v2 = poly->vertices[i];
+			v2 = (*poly)[i];
 			fprintf(f, "set arrow from %f, %f to %f, %f nohead lt 3\n", v1[0], v1[1], v2[0], v2[1]);
 		}
 	}

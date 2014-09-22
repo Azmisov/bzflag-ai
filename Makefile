@@ -1,0 +1,20 @@
+SOURCE_DIR := source
+HEADER_DIR := include
+OBJECT_DIR := build
+
+CC := g++
+CFLAGS := -I$(HEADER_DIR)
+
+SOURCES := $(wildcard $(SOURCE_DIR)/*.cpp)
+HEADERS := $(wildcard $(HEADER_DIR)/*.h)
+OBJECTS := $(patsubst $(SOURCE_DIR)/%.cpp,$(OBJECT_DIR)/%.o,$(SOURCES))
+
+#TODO: fix this to use auto dependencies
+$(OBJECT_DIR)/%.o: $(SOURCE_DIR)/%.cpp $(HEADERS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+make: $(OBJECTS)
+	$(CC) -o agent $(OBJECTS) -I$(HEADER_DIR)
+
+clean:
+	rm -f $(OBJECT_DIR)/*

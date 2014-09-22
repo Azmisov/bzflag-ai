@@ -5,14 +5,20 @@
 #include <math.h>
 #include "Vector2d.h"
 
+#define EPSILON 1e-5
+#define PI_2 6.28318530718
+//30: 0.86602540378 0.5
+//45: 0.70710678118 0.70710678118
+#define COS_TANGENTIAL 0.86602540378
+#define SIN_TANGENTIAL .5
+#define TANG_THRESHOLD .3
+
 class Polygon {
 private:
 	double area_cache;
-	
-public:
-	bool attractive; //true if attractive, false for repulsive
 	std::vector<Vector2d> vertices;
 	
+public:
 	Polygon();
 	Polygon(const Polygon& orig);
 	virtual ~Polygon();
@@ -20,6 +26,10 @@ public:
 	//Add vertex to back of vertex list (clockwise vertex convention)
 	void addPoint(Vector2d p);
 	void addPoint(double x, double y);
+	//Point access
+	int size();
+	const double& operator[](int idx) const;	
+	
 	//Does this shape contain this point
 	bool contains(const Vector2d &p) const;
 	bool contains(double x, double y) const;

@@ -1,5 +1,5 @@
-#ifndef Vector2d_H
-#define	Vector2d_H
+#ifndef Vector2D_H
+#define	Vector2D_H
 
 class Vector2d {
 public:
