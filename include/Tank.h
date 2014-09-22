@@ -2,6 +2,8 @@
 #define	TANK_H
 
 #include "Vector2d.h"
+#include "Protocol.h"
+#include <math.h>
 
 //These are the only states we're allowed to use for tanks
 enum TankMode {
@@ -14,7 +16,10 @@ enum TankMode {
 };
 
 class Tank {
+private:
+	int idx;
 public:
+	static Protocol p;
 	//
 	TankMode mode;
 	//Location and direction
@@ -24,11 +29,14 @@ public:
 	double vel_angular;
 	
 	Tank();
+	Tank(int i){idx=i};
 	Tank(const Tank& orig);
 	virtual ~Tank();
 	
 	//Compute potential field of polygon at point
 	const Vector2d pfieldGravity() const;
+	//Decides which commands to give to the tank
+	void evalPfield(vector<Obstacle> obstacles);
 };
 
 #endif
