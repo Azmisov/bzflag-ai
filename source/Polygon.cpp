@@ -9,6 +9,13 @@ Polygon::Polygon(bool attract) : Field(attract){
 Polygon::Polygon(const Polygon& orig){}
 Polygon::~Polygon(){}
 
+int Polygon::size(){
+	return vertices.size();
+}
+const Vector2d& Polygon::operator[](int idx) const{
+	return vertices[idx];
+}
+
 void Polygon::addPoint(Vector2d p){
 	area_cache = -1;
 	vertices.push_back(p);
@@ -115,12 +122,13 @@ const Vector2d Polygon::potentialField(const Vector2d &station, const Vector2d &
 		else{
 			double diff_y = v2[1]-v1[1],
 				diff_square = diff_x*diff_x + diff_y*diff_y,
-				dist = fabs(x2y1-x1y2)/sqrt(diff_square);
+				dist = fabs(x2y1-x1y2)/sqrt(diff_square),
+				decay = sqrt(diff_square);
 			if (min_dist > dist){
 				min_dist = dist;
 				tang_dir = same_dir;
 			}
-			double A = diff_x*(x1y2-x2y1)/diff_square,
+			double A = diff_x*(x1y2-x2y1)/pow(decay,6),
 				B = diff_y/diff_x;
 			edge_force = Vector2d(
 				A*(lnr - B*diff_theta),
@@ -132,6 +140,7 @@ const Vector2d Polygon::potentialField(const Vector2d &station, const Vector2d &
 			edge_force = -edge_force;
 		//Rotate force for tangential circling
 		//Rotation direction is determined by station's current direction (prefer less change in direction)
+		/*
 		if (same_dir != attractive){
 			//Clockwise
 			force[0] += COS_TANGENTIAL*edge_force[0] + SIN_TANGENTIAL*edge_force[1];
@@ -142,8 +151,11 @@ const Vector2d Polygon::potentialField(const Vector2d &station, const Vector2d &
 			force[0] += COS_TANGENTIAL*edge_force[0] - SIN_TANGENTIAL*edge_force[1];
 			force[1] += COS_TANGENTIAL*edge_force[1] + SIN_TANGENTIAL*edge_force[0];
 		}
+		//*/
+		force += edge_force;
     }
     //Add secondary tangential field for better obstacle avoidance
+    //*
     if (min_dist < TANG_THRESHOLD){
 		if (tang_dir == attractive){
 			//Clockwise
@@ -156,5 +168,6 @@ const Vector2d Polygon::potentialField(const Vector2d &station, const Vector2d &
 			force[1] = COS_TANGENTIAL*force[1] + SIN_TANGENTIAL*force[0];
 		}
 	}
+	//*/
     return force;
 }

@@ -23,15 +23,27 @@ const Vector2d Circle::potentialField(const Vector2d &station, const Vector2d &d
 	double dy = station[1]-loc[1];
 	
 	double distance = sqrt(pow(dx,2) + pow(dy,2));
+	double spread = 10*radius;
+	double alpha = 2;
 	if (attractive){
+		/*
 		if (distance < radius)
 			return force;
-		else if (distance > 10 * radius)
-			force.setData(dx/distance, dy/distance);
-		else{
-			double ratio = distance/(10*radius);
-			force.setData(dx*ratio/distance, dy*ratio/distance);
+		else if (distance > spread){
+			//force.setData(dx/distance, dy/distance);
+			force.setData(dx, dy);
+			force *= spread*alpha;
 		}
+		else{
+			//double ratio = distance/(10*radius);
+			force.setData(dx, dy);
+			force *= alpha*(distance-radius);
+			//force.setData(dx*ratio/distance, dy*ratio/distance);
+		}
+		*/
+		force.setData(dx, dy);
+		force /= distance;
+		//TODO: linear decay inside of circle
 	}
 	else{
 		if (distance > 10 * radius)

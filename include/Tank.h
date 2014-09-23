@@ -10,6 +10,7 @@
 #include "Flag.h"
 
 class Protocol;
+struct GameConstants;
 
 using namespace std;
 
@@ -28,7 +29,10 @@ private:
 	int idx;
 public:
 	static Protocol protocol;
+	//Stategy variables
 	TankMode mode;
+	//TODO: how to make this into a field, so we can have different types of goals
+	vector<Flag*> goals;
 	//Location and direction
 	Vector2d loc, dir;
 	//Velocity (linear and angular)

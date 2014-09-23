@@ -4,7 +4,7 @@ Protocol::Protocol(){}
 Protocol::Protocol(const char* hostname, int port){
 	this->hostname = hostname;
 	this->port = port;
-	if (init()) {
+	if (!init()) {
 		cout << "BZRC initialization failed; could not esetablish server connection" << endl;
 		close();
 	}
@@ -23,9 +23,10 @@ bool Protocol::init(){
 	memset(&hint, 0, sizeof(hint));
 	hint.ai_family = AF_INET;
 	hint.ai_socktype = SOCK_STREAM;
-	char port[10];
-	snprintf(port, 10, "%d", port);
-	if (getaddrinfo(hostname, port, &hint, &infop) != 0) {
+	char port_str[10];
+	snprintf(port_str, 10, "%d", port);
+	int error = getaddrinfo(hostname, port_str, &hint, &infop);
+	if (error != 0){
 		perror("Couldn't lookup host.");
 		return false;
 	}
@@ -145,6 +146,7 @@ vector<string> Protocol::readArr() {
 	}
     string buf;
     stringstream ss(LineText);
+    list_buffer.clear();
     while (ss >> buf)
         list_buffer.push_back(buf);
 	return list_buffer;
@@ -230,7 +232,7 @@ bool Protocol::initialBoard(
 	sendLine("constants");
 	readAck();
 	vector<string> v = readArr();
-	if (v.at(0)!="begin")
+	if (v.at(0) != "begin")
 		return false;
 	v.clear();
 	v = readArr();
@@ -449,11 +451,19 @@ bool Protocol::updateBoard(
 		);
 		bool isPossessed = v.at(2) != "none";
 		bool havePosession = v.at(2) == gc.mycolor;
-		vector<Flag*>::iterator &ref = v.at(1) == gc.mycolor ? flags_iter : enemy_flags_iter;
-		(*ref)->loc = pos;
-		(*ref)->isPossessed = isPossessed;
-		(*ref)->havePosession = havePosession;
-		ref++;
+		//vector<Flag*>::iterator &ref = v.at(1) == gc.mycolor ? flags_iter : enemy_flags_iter;
+		if (v.at(1) == gc.mycolor){
+			(*flags_iter)->loc = pos;
+			(*flags_iter)->isPossessed = isPossessed;
+			(*flags_iter)->havePosession = havePosession;
+			flags_iter++;
+		}
+		else{
+			(*enemy_flags_iter)->loc = pos;
+			(*enemy_flags_iter)->isPossessed = isPossessed;
+			(*enemy_flags_iter)->havePosession = havePosession;
+			enemy_flags_iter++;
+		}
 		v.clear();
 		v = readArr();
 	}

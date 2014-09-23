@@ -8,12 +8,13 @@
 #include "Flag.h"
 #include "Protocol.h"
 #include <unistd.h>
+#include <time.h>
 
 using namespace std;
 
 GameConstants gc;
 Polygon base;
-vector<Tank*> tanks;
+vector<dumbTank*> tanks;
 vector<Flag*> flags;
 vector<Tank*> enemy_tanks;
 vector<Flag*> enemy_flags;
@@ -23,32 +24,21 @@ void graphFields();
 
 int main(int argc, char** argv){
 	//Connect to the server
-	Tank::protocol = Protocol(NULL, 50100);
-	dumbTank::protocol = Tank::protocol;
-	if (!Tank::protocol.isConnected()){
+	dumbTank::protocol = Protocol(NULL, 50101);
+	if (!dumbTank::protocol.isConnected()){
 		cout << "Can't connect to BZRC server!" << endl;
 		exit(1);
 	}
 	
-	//Initialize the board
-	if (!Tank::protocol.initialBoard(gc, base, tanks, flags, enemy_tanks, enemy_flags, obstacles)){
-		cout << "Failed to initialize board!" << endl;
-		exit(1);
-	}
-	Tank::protocol.updateBoard(gc, tanks, flags, enemy_tanks, enemy_flags);
-	graphFields();
+	tanks.push_back(new dumbTank(0));
+	tanks.push_back(new dumbTank(1));
 	
-	//Randomly assign goals
-	int goal = 0, num_flags = enemy_flags.size();
-	for (int i=0; i<tanks.size(); i++){
-		tanks[i]->goals.push_back(enemy_flags[goal]);
-		goal = (goal+1) % num_flags;
-	}
-	
+	time_t start = time(NULL);
 	while(true){
-		Tank::protocol.updateBoard(gc, tanks, flags, enemy_tanks, enemy_flags);
+		int diff = (int) (time(NULL)-start);
+		//double t = diff/1000;
 		for (int i=0; i < tanks.size(); i++){
-			tanks[i]->evalPfield(gc, base, tanks, flags, enemy_tanks, enemy_flags, obstacles);
+			tanks[i]->evalPfield(diff);
 		}
 		usleep(30);
 	}

@@ -7,7 +7,7 @@ dumbTank::dumbTank(int i){
 	nextMove = (((double)rand()/RAND_MAX)*5)+3;
 	nextShot = ((double)rand()/RAND_MAX)+1.5;
 	turning = false;
-	protocol.speed(idx, 1.0);
+	dumbTank::protocol.speed(idx, 1.0);
 }
 dumbTank::dumbTank(const dumbTank& orig){}
 dumbTank::~dumbTank(){}

@@ -24,7 +24,7 @@ public:
 	void addPoint(double x, double y);
 	//Point access
 	int size();
-	const double& operator[](int idx) const;	
+	const Vector2d& operator[](int idx) const;
 	
 	//Does this shape contain this point
 	bool contains(const Vector2d &p) const;
