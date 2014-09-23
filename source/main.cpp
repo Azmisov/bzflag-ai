@@ -7,6 +7,7 @@
 #include "dumbTank.h"
 #include "Flag.h"
 #include "Protocol.h"
+#include <unistd.h>
 
 using namespace std;
 
@@ -30,7 +31,19 @@ int main(int argc, char** argv){
 	//Initialize the board
 	Tank::protocol.initialBoard(gc, base, tanks, flags, enemy_tanks, enemy_flags, obstacles);
 	
+<<<<<<< HEAD
 	
+=======
+	while(true)
+	{
+		Tank::protocol.updateBoard(tanks, flags, enemy_tanks, enemy_flags);
+		for (int i=0; i < tanks.size(); i++)
+		{
+			tanks[i].evalPfield(gc, base, tanks, flags, enemy_tanks, enemy_flags, obstacles);
+		}
+		usleep(30);
+	}
+>>>>>>> ce45de0e055db2cc5a8ecda5e046d22244ad97b5
 	
 	return 0;
 }

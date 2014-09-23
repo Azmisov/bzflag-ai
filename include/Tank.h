@@ -6,6 +6,7 @@
 #include "Field.h"
 #include "Vector2d.h"
 #include "Protocol.h"
+#include "Circle.h"
 
 class Protocol;
 
@@ -39,7 +40,15 @@ public:
 	virtual ~Tank();
 	
 	//Decides which commands to give to the tank
-	const Vector2d evalPfield(vector<Field> obstacles);
+	void evalPfield(GameConstants &gc,
+		Polygon &base,
+		vector<Tank*> &tanks,
+		vector<Flag*> &flags,
+		vector<Tank*> &enemy_tanks,
+		vector<Flag*> &enemy_flags,
+		vector<Polygon*> &obstacles);
+		
+	const Vector2d potentialField(const Vector2d &station, const Vector2d &dir) const;
 };
 
 #endif

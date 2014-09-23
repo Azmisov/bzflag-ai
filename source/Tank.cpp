@@ -8,11 +8,26 @@ Tank::Tank(int i){
 Tank::Tank(const Tank& orig){}
 Tank::~Tank(){}
 
-const Vector2d Tank::evalPfield(vector<Field> obstacles){
+void Tank::evalPfield(GameConstants &gc,
+		Polygon &base,
+		vector<Tank*> &tanks,
+		vector<Flag*> &flags,
+		vector<Tank*> &enemy_tanks,
+		vector<Flag*> &enemy_flags,
+		vector<Polygon*> &obstacles){
+			
 	double pi = 3.1415926435;
 	Vector2d result = Vector2d(0);
 	for (int i=0; i < obstacles.size(); i++){
 		result += obstacles[i].potentialField(loc,dir);
+	}
+	for (int i=0; i < enemy_tanks.size(); i++)
+	{
+		result += enemy_tanks[i].potentialField(loc,dir);
+	}
+	for (int i=0; i < enemy_flags.size(); i++)
+	{
+		result += enemy_flags[i].potentialField(loc,dir);
 	}
 	
 	double desiredAngle = atan2(result[1], result[0]);
@@ -32,4 +47,10 @@ const Vector2d Tank::evalPfield(vector<Field> obstacles){
 	Tank::protocol.angvel(idx, angDiff/pi);
 	
 	return result;
+}
+
+Tank::const Vector2d potentialField(const Vector2d &station, const Vector2d &dir) const
+{
+	Circle c = new Circle(loc, 3, false);
+	return c.potentialField(station, dir);
 }

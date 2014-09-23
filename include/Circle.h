@@ -15,6 +15,7 @@ public:
 
 	Circle();
 	Circle(bool attract);
+	Circle(Vector2d l, double r);
 	Circle(const Circle& orig);
 	virtual ~Circle();
 	
