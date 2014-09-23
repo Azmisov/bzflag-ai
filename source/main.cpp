@@ -19,18 +19,19 @@ vector<Polygon*> obstacles;
 
 int main(int argc, char** argv){
 	//Connect to the server
-	Protocol p = Protocol("localhost", 50100);
-	if (!p.isConnected){
+	Tank::protocol = Protocol("localhost", 50100);
+	if (!Tank::protocol.isConnected()){
 		cout << "Can't connect to BZRC server." << endl;
 		exit(1);
 	}
 	
 	//Initialize the board
-	p.initialBoard(gc, base, tanks, flags, enemy_tanks, enemy_flags, obstacles);
+	Tank::protocol.initialBoard(gc, base, tanks, flags, enemy_tanks, enemy_flags, obstacles);
 	
 	return 0;
 }
 
+/*
 void graphFields(){
 	Polygon p1 = Polygon();
 	p1.addPoint(0, 0);
@@ -81,3 +82,4 @@ void graphFields(){
 	//Close plot file
 	fclose(f);
 }
+//*/

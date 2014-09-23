@@ -1,7 +1,9 @@
 #include "Polygon.h"
 
 Polygon::Polygon(){
-	attractive = true;
+	area_cache = -1;
+}
+Polygon::Polygon(bool attract) : Field(attract){
 	area_cache = -1;
 }
 Polygon::Polygon(const Polygon& orig){}

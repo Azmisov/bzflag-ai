@@ -4,17 +4,18 @@
 #include <vector>
 #include <math.h>
 #include "Vector2d.h"
-#include "Obstacle.h"
+#include "Field.h"
 
-class Obstacle;
+class Field;
 
-class Polygon : public Obstacle {
+class Polygon : public Field {
 private:
 	double area_cache;
 	std::vector<Vector2d> vertices;
 	
 public:
 	Polygon();
+	Polygon(bool attract);
 	Polygon(const Polygon& orig);
 	virtual ~Polygon();
 	

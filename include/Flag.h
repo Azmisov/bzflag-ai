@@ -2,18 +2,19 @@
 #define	FLAG_H
 
 #include <string>
+#include "Circle.h"
 #include "Vector2d.h"
 
-class Flag {
+class Circle;
+
+class Flag : public Circle{
 public:
-	static double radius;
-	//Location
-	Vector2d loc;
-	//Velocity (linear and angular)
+	//Who posses this flag?
 	bool isPossessed;
 	bool havePosession;
 	
 	Flag();
+	Flag(bool attract);
 	Flag(const Flag& orig);
 	virtual ~Flag();
 };

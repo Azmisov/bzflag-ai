@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <math.h>
+#include "Field.h"
 #include "Vector2d.h"
 #include "Protocol.h"
 
@@ -24,8 +25,7 @@ class Tank {
 private:
 	int idx;
 public:
-	static Protocol p;
-	//
+	static Protocol protocol;
 	TankMode mode;
 	//Location and direction
 	Vector2d loc, dir;
@@ -38,10 +38,8 @@ public:
 	Tank(const Tank& orig);
 	virtual ~Tank();
 	
-	//Compute potential field of polygon at point
-	const Vector2d pfieldGravity() const;
 	//Decides which commands to give to the tank
-	void evalPfield(vector<Obstacle> obstacles);
+	const Vector2d evalPfield(vector<Field> obstacles);
 };
 
 #endif

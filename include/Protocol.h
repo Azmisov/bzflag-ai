@@ -20,6 +20,8 @@
 #include "Tank.h"
 #include "Flag.h"
 
+class Tank;
+
 const int kBufferSize = 1024;
 
 using namespace std;
@@ -69,6 +71,7 @@ private:
 	void printLine();						// Receive and print another line
 
 public:
+	Protocol();
 	Protocol(const char* host, int port);
 	virtual ~Protocol();
 	bool isConnected();

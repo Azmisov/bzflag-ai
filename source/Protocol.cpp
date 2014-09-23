@@ -1,5 +1,6 @@
 #include "Protocol.h"
 
+Protocol::Protocol(){}
 Protocol::Protocol(const char* hostname, int port){
 	this->hostname = hostname;
 	this->port = port;
@@ -54,7 +55,6 @@ bool Protocol::close(){
 	//close(sd);
 	return true;
 }
-
 
 /// Communicate with the server; NOTE: I did not write any of this code
 bool Protocol::sendLine(const char *line) {
@@ -178,11 +178,8 @@ void Protocol::printLine() {
 bool Protocol::shoot(int idx){
 	// Perform a shoot request.
 	char char_buff[20];
-	sprintf(char_buff, "shoot %d", index);	
-	string str_buff = "shoot";
-	str_buff.append(char_buff);
-	const char *command = str_buff.c_str();
-	sendLine(command);
+	sprintf(char_buff, "shoot %d", idx);
+	sendLine(char_buff);
 	readAck();
 	return readBool();
 }
