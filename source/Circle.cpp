@@ -3,7 +3,7 @@
 Circle::Circle(){}
 Circle::Circle(bool attract) : Field(attract){}
 Circle::Circle(const Circle& orig){}
-Circle(Vector2d l, double r, bool attract){loc = l; radius = r; attractive = attract;}
+Circle::Circle(Vector2d l, double r, bool attract){loc = l; radius = r; attractive = attract;}
 Circle::~Circle(){}
 
 double Circle::area(){

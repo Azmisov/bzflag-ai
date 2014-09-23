@@ -7,6 +7,7 @@
 #include "Vector2d.h"
 #include "Protocol.h"
 #include "Circle.h"
+#include "Flag.h"
 
 class Protocol;
 
