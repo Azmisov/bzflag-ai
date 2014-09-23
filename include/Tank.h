@@ -6,6 +6,7 @@
 #include "Field.h"
 #include "Vector2d.h"
 #include "Protocol.h"
+#include "Circle.h"
 
 class Protocol;
 
@@ -46,6 +47,8 @@ public:
 		vector<Tank*> &enemy_tanks,
 		vector<Flag*> &enemy_flags,
 		vector<Polygon*> &obstacles);
+		
+	const Vector2d potentialField(const Vector2d &station, const Vector2d &dir) const;
 };
 
 #endif

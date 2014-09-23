@@ -48,3 +48,9 @@ void Tank::evalPfield(GameConstants &gc,
 	
 	return result;
 }
+
+Tank::const Vector2d potentialField(const Vector2d &station, const Vector2d &dir) const
+{
+	Circle c = new Circle(loc, 3, false);
+	return c.potentialField(station, dir);
+}
