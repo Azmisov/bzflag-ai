@@ -16,7 +16,8 @@ private:
 	bool turning;
 public:
 	static Protocol p;
-	int nextMove;
+	double nextMove;
+	double nextShot;
 	
 	dumbTank();
 	dumbTank(int i);
