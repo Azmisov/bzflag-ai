@@ -39,7 +39,13 @@ public:
 	virtual ~Tank();
 	
 	//Decides which commands to give to the tank
-	const Vector2d evalPfield(vector<Field> obstacles);
+	void evalPfield(GameConstants &gc,
+		Polygon &base,
+		vector<Tank*> &tanks,
+		vector<Flag*> &flags,
+		vector<Tank*> &enemy_tanks,
+		vector<Flag*> &enemy_flags,
+		vector<Polygon*> &obstacles);
 };
 
 #endif
