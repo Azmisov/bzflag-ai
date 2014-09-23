@@ -95,10 +95,12 @@ public:
 		vector<Polygon*> &obstacles
 	);
 	bool updateBoard(
+		GameConstants &gc,
 		vector<Tank*> &tanks,
 		vector<Flag*> &flags,
 		vector<Tank*> &enemy_tanks,
 		vector<Flag*> &enemy_flags
+		//vector<Shot*> &shots
 	);
 };
 

@@ -4,6 +4,7 @@
 #include "Vector2d.h"
 #include "Polygon.h"
 #include "Tank.h"
+#include "dumbTank.h"
 #include "Flag.h"
 #include "Protocol.h"
 
@@ -20,6 +21,7 @@ vector<Polygon*> obstacles;
 int main(int argc, char** argv){
 	//Connect to the server
 	Tank::protocol = Protocol("localhost", 50100);
+	dumbTank::protocol = Tank::protocol;
 	if (!Tank::protocol.isConnected()){
 		cout << "Can't connect to BZRC server." << endl;
 		exit(1);
@@ -27,6 +29,8 @@ int main(int argc, char** argv){
 	
 	//Initialize the board
 	Tank::protocol.initialBoard(gc, base, tanks, flags, enemy_tanks, enemy_flags, obstacles);
+	
+	
 	
 	return 0;
 }

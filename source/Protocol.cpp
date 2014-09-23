@@ -176,7 +176,7 @@ void Protocol::printLine() {
 	
 //Tank commands
 bool Protocol::shoot(int idx){
-	// Perform a shoot request.
+	//Perform a shoot request.
 	char char_buff[20];
 	sprintf(char_buff, "shoot %d", idx);
 	sendLine(char_buff);
@@ -184,16 +184,36 @@ bool Protocol::shoot(int idx){
 	return readBool();
 }
 bool Protocol::speed(int idx, double val){
-	
+	//Set the desired speed to the specified value.
+	char char_buff[20];
+	sprintf(char_buff, "speed %d %f", idx, val);
+	sendLine(char_buff);
+	readAck();
+	return readBool();
 }
 bool Protocol::angvel(int idx, double val){
-	
+	//Set the desired angular velocity to the specified value.
+	char char_buff[20];
+	sprintf(char_buff, "angvel %d %f", idx, val);
+	sendLine(char_buff);
+	readAck();
+	return readBool();
 }
 bool Protocol::accelx(int idx, double val){
-	
+	//Set the desired accelaration in x axis to the specified value in hovertank mode.
+	char char_buff[20];
+	sprintf(char_buff, "accelx %d %f", idx, val);
+	sendLine(char_buff);
+	readAck();
+	return readBool();
 }
 bool Protocol::accely(int idx, double val){
-	
+	//Set the desired accelaration in x axis to the specified value in hovertank mode.
+	char char_buff[20];
+	sprintf(char_buff, "accely %d %f", idx, val);
+	sendLine(char_buff);
+	readAck();
+	return readBool();
 }
 
 //Fetch information
@@ -320,9 +340,11 @@ bool Protocol::initialBoard(
 	v.clear();
 	v = readArr();
 	while (v.at(0) == "flag"){
+		Flag *f = new Flag();
+		f->radius = gc.flagradius;
 		if (v.at(1) == gc.mycolor)
-			flags.push_back(new Flag());
-		else enemy_flags.push_back(new Flag());		
+			flags.push_back(f);
+		else enemy_flags.push_back(f);		
 		v.clear();
 		v = readArr();
 	}
@@ -333,11 +355,111 @@ bool Protocol::initialBoard(
 	return true;
 }
 bool Protocol::updateBoard(
+	GameConstants &gc,
 	vector<Tank*> &tanks,
 	vector<Flag*> &flags,
 	vector<Tank*> &enemy_tanks,
 	vector<Flag*> &enemy_flags
 	//vector<Shot*> &shots
 ){
+	//Update tank positions
+	sendLine("mytanks");
+	readAck();
+	vector<string> v = readArr();
+	if (v.at(0) != "begin")
+		return false;
+	v.clear();
+	v = readArr();
+	vector<Tank*>::iterator tank_iter = tanks.begin();
+	while(v.at(0) == "mytank"){
+		//Update alive/dead status
+		bool alive = v.at(3) == gc.tankalive;
+		if (alive){
+			if ((*tank_iter)->mode == DEAD)
+				(*tank_iter)->mode = IDLE;
+		}
+		else (*tank_iter)->mode = DEAD;
+		//Update position
+		(*tank_iter)->loc = Vector2d(
+			atof(v.at(7).c_str()),
+			atof(v.at(8).c_str())
+		);
+		//Update angle
+		double theta = atof(v.at(9).c_str());
+		(*tank_iter)->dir = Vector2d(cos(theta), sin(theta));
+		//Update velocities
+		(*tank_iter)->vel_linear = Vector2d(
+			atof(v.at(10).c_str()),
+			atof(v.at(11).c_str())
+		);
+		(*tank_iter)->vel_angular = atof(v.at(12).c_str());
+		//MyTank.shots_avail=atoi(v.at(4).c_str());
+		//MyTank.time_to_reload=atof(v.at(5).c_str());
+		//MyTank.flag=v.at(6);
+		tank_iter++;
+		v.clear();
+		v=readArr();
+	}
+	if (v.at(0) != "end")
+		return false;
 	
+	//Update enemy tanks
+	sendLine("othertanks");
+	readAck();
+	v = readArr();
+	if (v.at(0) != "begin")
+		return false;
+	v.clear();
+	v = readArr();
+	tank_iter = enemy_tanks.begin();
+	while (v.at(0) == "othertank"){
+		//Update alive/dead status
+		bool alive = v.at(3) == gc.tankalive;
+		(*tank_iter)->mode = alive ? IDLE : DEAD;
+		//Update position
+		(*tank_iter)->loc = Vector2d(
+			atof(v.at(5).c_str()),
+			atof(v.at(6).c_str())
+		);
+		//Update angle
+		double theta = atof(v.at(7).c_str());
+		(*tank_iter)->dir = Vector2d(cos(theta), sin(theta));
+		//OtherTank.flag=v.at(4);
+		tank_iter++;
+		v.clear();
+		v = readArr();
+	}
+	if (v.at(0) != "end")
+		return false;
+	
+	//Update flag positions and possession
+	sendLine("flags");
+	readAck();
+	v = readArr();
+	if (v.at(0) != "begin")
+		return false;
+	v.clear();
+	v = readArr();
+	vector<Flag*>::iterator flags_iter = flags.begin();
+	vector<Flag*>::iterator enemy_flags_iter = enemy_flags.begin();
+	while (v.at(0) == "flag"){
+		Vector2d pos = Vector2d(
+			atof(v.at(3).c_str()),
+			atof(v.at(4).c_str())
+		);
+		bool isPossessed = v.at(2) != "none";
+		bool havePosession = v.at(2) == gc.mycolor;
+		vector<Flag*>::iterator &ref = v.at(1) == gc.mycolor ? flags_iter : enemy_flags_iter;
+		(*ref)->loc = pos;
+		(*ref)->isPossessed = isPossessed;
+		(*ref)->havePosession = havePosession;
+		ref++;
+		v.clear();
+		v = readArr();
+	}
+	if (v.at(0) != "end")
+		return false;
+		
+	//Hooray, there were no errors!
+	return true;
 }

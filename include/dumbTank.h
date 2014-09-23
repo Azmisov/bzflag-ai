@@ -10,22 +10,22 @@ class Protocol;
 
 using namespace std;
 
-class Tank {
+class dumbTank {
 private:
 	int idx;
 	bool turning;
 public:
-	static Protocol p;
+	static Protocol protocol;
 	double nextMove;
 	double nextShot;
 	
 	dumbTank();
 	dumbTank(int i);
-	dumbTank(const Tank& orig);
+	dumbTank(const dumbTank& orig);
 	virtual ~dumbTank();
 	
 	//Decides which commands to give to the tank
-	void evalPfield();
+	void evalPfield(double);
 };
 
 #endif
