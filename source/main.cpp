@@ -31,7 +31,7 @@ int main(int argc, char** argv){
 	
 	while(true)
 	{
-		updateBoard(tanks, flags, enemy_tanks, enemy_flags);
+		Tank::protocol.updateBoard(tanks, flags, enemy_tanks, enemy_flags);
 		for (int i=0; i < tanks.size(); i++)
 		{
 			tanks[i].evalPfield(gc, base, tanks, flags, enemy_tanks, enemy_flags, obstacles);
