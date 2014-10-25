@@ -14,6 +14,7 @@ public:
 
 	unsigned int getWidth();
 	unsigned int getHeight();
+	float get(unsigned int x, unsigned int y);
 	//Get x dimension, for array indexing
 	float* operator[](int idx);
 	
