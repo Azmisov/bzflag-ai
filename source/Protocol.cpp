@@ -254,6 +254,8 @@ bool Protocol::initialBoard(
 		else if (name == "shotrange") gc.shotrange = dval;
 		else if (name == "shotspeed") gc.shotspeed = dval;
 		else if (name == "flagradius") gc.flagradius = dval;
+		else if (name == "truenegative") gc.truenegative = dval;
+		else if (name == "truepositive") gc.truepositive = dval;
 		v.clear();
 		v = readArr();
 	}
@@ -483,7 +485,6 @@ bool Protocol::updateGrid(Grid &g, int tank_idx){
 	if (v.at(0) != "begin")
 		return false;
 	//Get occgrid dimensions
-	//In world space, grid goes from [rx-rw, ry
 	v = readArr();
 	int rx, ry, rw, rh;
 	if (sscanf(v.at(1).c_str(), "%d,%d", &rx, &ry) != 2)

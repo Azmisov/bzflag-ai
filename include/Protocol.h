@@ -42,6 +42,8 @@ typedef struct GameConstants {
 	double shotrange;
 	double shotspeed;
 	double flagradius;
+	double truenegative;
+	double truepositive;
 } GameConstants;
 
 class Protocol {

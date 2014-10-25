@@ -1,13 +1,12 @@
 #ifndef GRID_H
 #define GRID_H
 
-#include <stdlib.h>
-
 class Grid{
 private:
 	unsigned int w, h;
 
 public:
+	static float truenegative, truepositive;
 	float* grid;
 	
 	Grid(unsigned int width, unsigned int height);
