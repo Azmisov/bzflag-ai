@@ -19,6 +19,11 @@ float* Grid::operator[](int idx){
 	return &(grid[idx*w]);
 }
 
+float Grid::get(unsigned int x, unsigned int y)
+{
+	return grid[x*w + y];
+}
+
 void Grid::updateCell(unsigned int x, unsigned int y, bool observation){
 	float prior = grid[x*w + y];
 	float prob1 = 0;
