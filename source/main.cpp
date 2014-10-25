@@ -23,7 +23,7 @@ void graphFields();
 
 int main(int argc, char** argv){
 	//Connect to the server
-	Tank::protocol = Protocol(NULL, 50100);
+	Tank::protocol = Protocol(NULL, 50101);
 	dumbTank::protocol = Tank::protocol;
 	if (!Tank::protocol.isConnected()){
 		cout << "Can't connect to BZRC server!" << endl;

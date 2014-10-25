@@ -10,15 +10,15 @@ private:
 public:
 	float* grid;
 	
-	Grid(int width, int height);
+	Grid(unsigned int width, unsigned int height);
 	virtual ~Grid();
 
-	int getWidth();
-	int getHeight();
+	unsigned int getWidth();
+	unsigned int getHeight();
 	//Get x dimension, for array indexing
-	float& operator[](int idx);
+	float* operator[](int idx);
 	
-	void updateCell(int x, int y, int observation);
-}
+	void updateCell(unsigned int x, unsigned int y, bool observation);
+};
 
 #endif

@@ -32,13 +32,13 @@ void Tank::evalPfield(GameConstants &gc,
 		cout << enemy_flags[i]->loc[0] << ", " << enemy_flags[i]->loc[1] << endl;
 	}
 	*/
-	result -= 30*goals[goals.size()-1]->potentialField(loc,dir);	
+	result -= 60*goals[goals.size()-1]->potentialField(loc,dir);	
 	
 	double desiredAngle = atan2(result[1], result[0]);
 	double desiredMagnitude = result.length();
 	double currentAngle = atan2(dir[1], dir[0]);
 	
-	Tank::protocol.speed(idx, desiredMagnitude*.4);
+	Tank::protocol.speed(idx, 1); //desiredMagnitude*.4
 	//cout << desiredMagnitude *.1 << endl;
 	
 	double angDiff = currentAngle - desiredAngle;

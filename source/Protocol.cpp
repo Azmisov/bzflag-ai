@@ -486,10 +486,10 @@ bool Protocol::updateGrid(Grid &g, int tank_idx){
 	//In world space, grid goes from [rx-rw, ry
 	v = readArr();
 	int rx, ry, rw, rh;
-	if (sscanf(v.at(1), "%d,%d", &rx, &ry) != 2)
+	if (sscanf(v.at(1).c_str(), "%d,%d", &rx, &ry) != 2)
 		return false;
 	v = readArr();
-	if (sscanf(v.at(1), "%dx%d", &rw, &rh) != 2)
+	if (sscanf(v.at(1).c_str(), "%dx%d", &rw, &rh) != 2)
 		return false;
 	//Get occgrid values
 	for (int i=0; i<rw; i++, rx++){

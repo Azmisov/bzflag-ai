@@ -5,18 +5,18 @@ Grid::Grid(unsigned int width, unsigned int height){
 	h = height;
 	grid = (float*) malloc(sizeof(float)*width*height);
 }
-virtual Grid::~Grid(){
+Grid::~Grid(){
 	free(grid);
 }
 
-int getWidth(){ return w; }
-int getHeight(){ return h; }
+unsigned int Grid::getWidth(){ return w; }
+unsigned int Grid::getHeight(){ return h; }
 
 float* Grid::operator[](int idx){
 	return &(grid[idx*w]);
 }
 
-void updateCell(int x, int y, int observation){
-	float old = grid[x*width + y];
+void Grid::updateCell(unsigned int x, unsigned int y, bool observation){
+	float old = grid[x*w + y];
 	//TODO: update based on bayes rule
 }

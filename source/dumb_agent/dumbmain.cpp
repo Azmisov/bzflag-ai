@@ -24,7 +24,7 @@ void graphFields();
 
 int main(int argc, char** argv){
 	//Connect to the server
-	dumbTank::protocol = Protocol(NULL, 50101);
+	dumbTank::protocol = Protocol(NULL, 50100);
 	if (!dumbTank::protocol.isConnected()){
 		cout << "Can't connect to BZRC server!" << endl;
 		exit(1);
