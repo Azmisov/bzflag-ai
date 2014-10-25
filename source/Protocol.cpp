@@ -473,3 +473,37 @@ bool Protocol::updateBoard(
 	//Hooray, there were no errors!
 	return true;
 }
+bool Protocol::updateGrid(Grid &g, int tank_idx){
+	//Get grid for a single tank
+	char char_buff[13];
+	sprintf(char_buff, "occgrid %d", tank_idx);
+	sendLine(char_buff);
+	readAck();
+	vector<string> v = readArr();
+	if (v.at(0) != "begin")
+		return false;
+	//Get occgrid dimensions
+	//In world space, grid goes from [rx-rw, ry
+	v = readArr();
+	int rx, ry, rw, rh;
+	if (sscanf(v.at(1), "%d,%d", &rx, &ry) != 2)
+		return false;
+	v = readArr();
+	if (sscanf(v.at(1), "%dx%d", &rw, &rh) != 2)
+		return false;
+	//Get occgrid values
+	for (int i=0; i<rw; i++, rx++){
+		v = readArr();
+		string& occ = v.at(0);
+		if (occ.size() != rh)
+			return false;
+		for (int j=0; j<rh; j++)
+			g.updateCell(rx, ry+j, occ[j] == '1');
+	}
+	v = readArr();
+	if (v.at(0) != "end")
+		return false;
+	
+	//No errors!
+	return true;
+}

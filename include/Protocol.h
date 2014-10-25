@@ -102,6 +102,7 @@ public:
 		vector<Flag*> &enemy_flags
 		//vector<Shot*> &shots
 	);
+	bool Protocol::updateGrid(Grid &g, int tank_idx);
 };
 
 #endif
