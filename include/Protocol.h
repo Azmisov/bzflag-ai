@@ -17,11 +17,11 @@
 
 #include "Vector2d.h"
 #include "Polygon.h"
-#include "Tank.h"
+#include "ExplorerTank.h"
 #include "Flag.h"
 #include "Grid.h"
 
-class Tank;
+class ExplorerTank;
 
 const int kBufferSize = 1024;
 
@@ -91,21 +91,22 @@ public:
 	bool initialBoard(
 		GameConstants &gc,
 		Polygon &base,
-		vector<Tank*> &tanks,
+		vector<ExplorerTank*> &tanks,
 		vector<Flag*> &flags,
-		vector<Tank*> &enemy_tanks,
+		vector<ExplorerTank*> &enemy_tanks,
 		vector<Flag*> &enemy_flags,
-		vector<Polygon*> &obstacles
+		vector<Polygon*> &obstacles,
+		bool use_obstacles
 	);
 	bool updateBoard(
 		GameConstants &gc,
-		vector<Tank*> &tanks,
+		vector<ExplorerTank*> &tanks,
 		vector<Flag*> &flags,
-		vector<Tank*> &enemy_tanks,
+		vector<ExplorerTank*> &enemy_tanks,
 		vector<Flag*> &enemy_flags
 		//vector<Shot*> &shots
 	);
-	bool updateGrid(Grid &g, int tank_idx);
+	bool updateGrid(GameConstants &gc, Grid &g, int tank_idx);
 };
 
 #endif

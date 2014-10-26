@@ -1,6 +1,7 @@
 SOURCE_DIR := source
 HEADER_DIR := include
 OBJECT_DIR := build
+LIBS := include/glfw3/libglfw3.a include/freeimage/libfreeimage.a -lGL -lX11 -lXxf86vm -lm -lpthread -lXrandr -lXi
 
 CC := g++
 CFLAGS := -I$(HEADER_DIR)
@@ -14,7 +15,7 @@ $(OBJECT_DIR)/%.o: $(SOURCE_DIR)/%.cpp $(HEADERS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 make: $(OBJECTS)
-	$(CC) -o agent $(OBJECTS) -I$(HEADER_DIR)
+	$(CC) -o agent $(OBJECTS) -I$(HEADER_DIR) $(LIBS)
 
 clean:
 	rm -f $(OBJECT_DIR)/*

@@ -8,6 +8,7 @@
 #include "Flag.h"
 #include "Protocol.h"
 #include "Grid.h"
+#include "ExplorerTank.h"
 #include <unistd.h>
 #include "glfw3/glfw3.h"
 #include "freeimage/FreeImage.h"
@@ -20,17 +21,18 @@ using namespace std;
 GameConstants gc;
 Polygon base;
 Grid *grid;
-vector<Tank*> tanks;
+vector<ExplorerTank*> tanks;
 vector<Flag*> flags;
-vector<Tank*> enemy_tanks;
+vector<ExplorerTank*> enemy_tanks;
 vector<Flag*> enemy_flags;
 vector<Polygon*> obstacles;
 
 unsigned char* img_buffer;
 int WIN_SIZE;
+bool SHOULD_CLOSE = false;
 
 void graphFields();
-void visualize();
+void *visualize(void *args);
 void save_buffer(int time);
 void exit_program();
 
@@ -50,7 +52,7 @@ int main(int argc, char** argv){
 		exit(1);
 	}
 	//Initialize the board
-	if (!Tank::protocol.initialBoard(gc, base, tanks, flags, enemy_tanks, enemy_flags, obstacles)){
+	if (!Tank::protocol.initialBoard(gc, base, tanks, flags, enemy_tanks, enemy_flags, obstacles, false)){
 		cout << "Failed to initialize board!" << endl;
 		exit(1);
 	}
@@ -60,7 +62,9 @@ int main(int argc, char** argv){
 	WIN_SIZE = (int) gc.worldsize;
 	grid = new Grid(WIN_SIZE, WIN_SIZE);
 	
-	//graphFields();
+	//Start visualization thread
+	pthread_t viz_thread;
+	pthread_create(&viz_thread, NULL, visualize, NULL);
 	
 	//Randomly assign goals
 	/*
@@ -69,18 +73,22 @@ int main(int argc, char** argv){
 		tanks[i]->goals.push_back(enemy_flags[goal]);
 		goal = (goal+1) % num_flags;
 	}
+	*/
 	
+	int idx = 0;
 	while(true){
 		Tank::protocol.updateBoard(gc, tanks, flags, enemy_tanks, enemy_flags);
 		for (int i=0; i < tanks.size(); i++){
-			tanks[i]->evalPfield(gc, base, tanks, flags, enemy_tanks, enemy_flags, obstacles);
+			tanks[i]->evalPfield(idx, gc, *grid);
+			Tank::protocol.updateGrid(gc, *grid, i);
 		}
-		usleep(300);
+		usleep(3000);
+		idx++;
 	}
-	*/
-	visualize();
 	
-	printf("Done, now working on drawing...\n");
+	SHOULD_CLOSE = true;
+	while (SHOULD_CLOSE) ;
+	delete grid;
 	return 0;
 }
 
@@ -129,7 +137,7 @@ void graphFields(){
 static void error_callback(int error, const char* description){
 	printf("\nError: %s",description);
 }
-void visualize(){
+void *visualize(void *args){
 	//Create GLFW window
 	GLFWwindow* window;
 	glfwSetErrorCallback(error_callback);
@@ -167,14 +175,33 @@ void visualize(){
 	while (!glfwWindowShouldClose(window)){
 		glClear(GL_COLOR_BUFFER_BIT);
 		glDrawPixels(WIN_SIZE, WIN_SIZE, GL_LUMINANCE, GL_FLOAT, grid->grid);
+		//Tanks
 		glColor3f(1,.5,0);
 		glBegin(GL_POINTS);
 		for (int i=0; i<tank_size; i++)
 			glVertex2dv(tanks[i]->loc.data);
 		glEnd();
+		//Goals
+		glColor3f(0,1,0);
+		glBegin(GL_POINTS);
+		for (int i=0; i<tank_size; i++){
+			for (int j=0; j<tanks[i]->goals.size(); j++)
+				glVertex2dv(tanks[i]->goals[j]->loc.data);
+		}
+		glEnd();
+		//Obstacles
+		glColor3f(0,0,1);
+		glBegin(GL_POINTS);
+		for (int i=0; i<tank_size; i++){
+			for (int j=0; j<tanks[i]->obstacles.size(); j++)
+				glVertex2dv(tanks[i]->obstacles[j]->loc.data);
+		}
+		glEnd();
+		
 		glfwSwapBuffers(window);
-		usleep(33333);
+		usleep(10000);
 		glfwPollEvents();
+		if (SHOULD_CLOSE) break;
 	}
 
 	//Exit
@@ -183,7 +210,8 @@ void visualize(){
 	
 	glfwDestroyWindow(window);
 	glfwTerminate();
-	exit_program();
+	SHOULD_CLOSE = false;
+	pthread_exit(NULL);
 }
 
 void save_buffer(int time){
@@ -203,9 +231,4 @@ void save_buffer(int time){
 	);
 	FreeImage_Save(FIF_PNG, img, fname, 0);
 	FreeImage_Unload(img);
-}
-
-void exit_program(){
-	delete grid;
-	exit(EXIT_SUCCESS);
 }

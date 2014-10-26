@@ -13,7 +13,7 @@ Grid::Grid(unsigned int width, unsigned int height){
 	int gsize = width*height;
 	grid = (float*) malloc(sizeof(float)*gsize);
 	for (int i=0; i<gsize; i++)
-		grid[i] = .5;
+		grid[i] = .3;
 }
 Grid::~Grid(){
 	free(grid);

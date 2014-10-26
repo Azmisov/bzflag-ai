@@ -222,11 +222,12 @@ bool Protocol::accely(int idx, double val){
 bool Protocol::initialBoard(
 	GameConstants &gc,
 	Polygon &base,
-	vector<Tank*> &tanks,
+	vector<ExplorerTank*> &tanks,
 	vector<Flag*> &flags,
-	vector<Tank*> &enemy_tanks,
+	vector<ExplorerTank*> &enemy_tanks,
 	vector<Flag*> &enemy_flags,
-	vector<Polygon*> &obstacles
+	vector<Polygon*> &obstacles,
+	bool use_obstacles
 ){
 	//Request a dictionary of game constants
 	sendLine("constants");
@@ -275,12 +276,12 @@ bool Protocol::initialBoard(
 		//This is our team
 		if (v.at(1) == gc.mycolor){
 			for (int idx=0; idx<count; idx++)
-				tanks.push_back(new Tank(idx));
+				tanks.push_back(new ExplorerTank(idx));
 		}
 		//This is the enemy
 		else{
 			for (int idx=0; idx<count; idx++)
-				enemy_tanks.push_back(new Tank(-1));
+				enemy_tanks.push_back(new ExplorerTank(-1));
 		}
 		v.clear();
 		v = readArr();
@@ -289,27 +290,29 @@ bool Protocol::initialBoard(
 		return false;
 	
 	//Get a list of obstacles
-	sendLine("obstacles");
-	readAck();
-	v = readArr();
-	if (v.at(0) != "begin")
-		return false;
-	v.clear();
-	v = readArr();
-	while (v.at(0) == "obstacle"){
-		Polygon *p = new Polygon();
-		for (int i=1; i<v.size(); i+=2){
-			p->addPoint(
-				atof(v.at(i).c_str()),
-				atof(v.at(i+1).c_str())
-			);
-		}
-		obstacles.push_back(p);
+	if (use_obstacles){
+		sendLine("obstacles");
+		readAck();
+		v = readArr();
+		if (v.at(0) != "begin")
+			return false;
 		v.clear();
 		v = readArr();
+		while (v.at(0) == "obstacle"){
+			Polygon *p = new Polygon();
+			for (int i=1; i<v.size(); i+=2){
+				p->addPoint(
+					atof(v.at(i).c_str()),
+					atof(v.at(i+1).c_str())
+				);
+			}
+			obstacles.push_back(p);
+			v.clear();
+			v = readArr();
+		}
+		if (v.at(0) != "end")
+			return false;
 	}
-	if (v.at(0) != "end")
-		return false;
 	
 	//Get our base
 	sendLine("bases");
@@ -360,9 +363,9 @@ bool Protocol::initialBoard(
 }
 bool Protocol::updateBoard(
 	GameConstants &gc,
-	vector<Tank*> &tanks,
+	vector<ExplorerTank*> &tanks,
 	vector<Flag*> &flags,
-	vector<Tank*> &enemy_tanks,
+	vector<ExplorerTank*> &enemy_tanks,
 	vector<Flag*> &enemy_flags
 	//vector<Shot*> &shots
 ){
@@ -374,8 +377,9 @@ bool Protocol::updateBoard(
 		return false;
 	v.clear();
 	v = readArr();
-	vector<Tank*>::iterator tank_iter = tanks.begin();
+	vector<ExplorerTank*>::iterator tank_iter = tanks.begin();
 	while(v.at(0) == "mytank"){
+		/*
 		//Update alive/dead status
 		bool alive = v.at(3) == gc.tankalive;
 		if (alive){
@@ -383,6 +387,7 @@ bool Protocol::updateBoard(
 				(*tank_iter)->mode = IDLE;
 		}
 		else (*tank_iter)->mode = DEAD;
+		*/
 		//Update position
 		(*tank_iter)->loc = Vector2d(
 			atof(v.at(7).c_str()),
@@ -417,9 +422,11 @@ bool Protocol::updateBoard(
 	v = readArr();
 	tank_iter = enemy_tanks.begin();
 	while (v.at(0) == "othertank"){
+		/*
 		//Update alive/dead status
 		bool alive = v.at(3) == gc.tankalive;
 		(*tank_iter)->mode = alive ? IDLE : DEAD;
+		*/
 		//Update position
 		(*tank_iter)->loc = Vector2d(
 			atof(v.at(5).c_str()),
@@ -475,7 +482,7 @@ bool Protocol::updateBoard(
 	//Hooray, there were no errors!
 	return true;
 }
-bool Protocol::updateGrid(Grid &g, int tank_idx){
+bool Protocol::updateGrid(GameConstants &gc, Grid &g, int tank_idx){
 	//Get grid for a single tank
 	char char_buff[13];
 	sprintf(char_buff, "occgrid %d", tank_idx);
@@ -493,13 +500,14 @@ bool Protocol::updateGrid(Grid &g, int tank_idx){
 	if (sscanf(v.at(1).c_str(), "%dx%d", &rw, &rh) != 2)
 		return false;
 	//Get occgrid values
+	int half = (int) (gc.worldsize/2.0);
 	for (int i=0; i<rw; i++, rx++){
 		v = readArr();
 		string& occ = v.at(0);
 		if (occ.size() != rh)
 			return false;
 		for (int j=0; j<rh; j++)
-			g.updateCell(rx, ry+j, occ[j] == '1');
+			g.updateCell(half+(ry+j), half+rx, occ[j] == '1');
 	}
 	v = readArr();
 	if (v.at(0) != "end")
