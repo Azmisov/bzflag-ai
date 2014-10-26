@@ -15,6 +15,8 @@
 #include <sys/stat.h>
 
 #define SCREENCAST_DIR "screencast/"
+#define OCCGRID_WIDTH 200
+#define DO_SCREENCAST 1
 
 using namespace std;
 
@@ -28,6 +30,8 @@ vector<Flag*> enemy_flags;
 vector<Polygon*> obstacles;
 
 unsigned char* img_buffer;
+char grid_origin[OCCGRID_WIDTH*OCCGRID_WIDTH];
+float grid_blurred[OCCGRID_WIDTH*OCCGRID_WIDTH];
 int WIN_SIZE;
 bool SHOULD_CLOSE = false;
 
@@ -80,7 +84,7 @@ int main(int argc, char** argv){
 		Tank::protocol.updateBoard(gc, tanks, flags, enemy_tanks, enemy_flags);
 		for (int i=0; i < tanks.size(); i++){
 			tanks[i]->evalPfield(idx, gc, *grid);
-			Tank::protocol.updateGrid(gc, *grid, i);
+			Tank::protocol.updateGrid(gc, *grid, i, grid_origin, grid_blurred);
 		}
 		usleep(3000);
 		idx++;
@@ -162,8 +166,8 @@ void *visualize(void *args){
 	glViewport(0, 0, WIN_SIZE, WIN_SIZE);
 	float div_2 = WIN_SIZE/2.0;
 	glOrtho(-div_2, div_2, -div_2, div_2, 0, 1);
-	glPointSize(8);
-	glEnable(GL_POINT_SMOOTH);
+	glPointSize(4);
+	//glEnable(GL_POINT_SMOOTH);
 	
 	//Drawing & event loop
 	//Create directory to save buffers in
@@ -172,6 +176,7 @@ void *visualize(void *args){
 	img_buffer = new unsigned char[WIN_SIZE*WIN_SIZE*3];
 	
 	int tank_size = tanks.size();
+	int frame = 0, frame_num = 0;
 	while (!glfwWindowShouldClose(window)){
 		glClear(GL_COLOR_BUFFER_BIT);
 		glDrawPixels(WIN_SIZE, WIN_SIZE, GL_LUMINANCE, GL_FLOAT, grid->grid);
@@ -197,9 +202,10 @@ void *visualize(void *args){
 				glVertex2dv(tanks[i]->obstacles[j]->loc.data);
 		}
 		glEnd();
-		
 		glfwSwapBuffers(window);
 		usleep(10000);
+		if (DO_SCREENCAST && frame++ % 400 == 0)
+			save_buffer(frame_num++);
 		glfwPollEvents();
 		if (SHOULD_CLOSE) break;
 	}

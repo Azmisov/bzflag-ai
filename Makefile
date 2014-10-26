@@ -15,7 +15,7 @@ $(OBJECT_DIR)/%.o: $(SOURCE_DIR)/%.cpp $(HEADERS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 make: $(OBJECTS)
-	$(CC) -o agent $(OBJECTS) -I$(HEADER_DIR) $(LIBS)
+	$(CC) -o agent $(OBJECTS) -I$(HEADER_DIR) $(LIBS) -O3
 
 clean:
 	rm -f $(OBJECT_DIR)/*

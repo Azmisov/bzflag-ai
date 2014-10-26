@@ -482,7 +482,13 @@ bool Protocol::updateBoard(
 	//Hooray, there were no errors!
 	return true;
 }
-bool Protocol::updateGrid(GameConstants &gc, Grid &g, int tank_idx){
+bool Protocol::updateGrid(
+	GameConstants &gc,
+	Grid &g,
+	int tank_idx,
+	char* origin,
+	float* blurred
+){
 	//Get grid for a single tank
 	char char_buff[13];
 	sprintf(char_buff, "occgrid %d", tank_idx);
@@ -501,13 +507,48 @@ bool Protocol::updateGrid(GameConstants &gc, Grid &g, int tank_idx){
 		return false;
 	//Get occgrid values
 	int half = (int) (gc.worldsize/2.0);
-	for (int i=0; i<rw; i++, rx++){
+	int bidx = 0;
+	for (int i=0; i<rw; i++){
 		v = readArr();
 		string& occ = v.at(0);
 		if (occ.size() != rh)
 			return false;
-		for (int j=0; j<rh; j++)
-			g.updateCell(half+(ry+j), half+rx, occ[j] == '1');
+		for (int j=0; j<rh; j++, bidx++){
+			bool is_occ = occ[j] == '1';
+			if (BLUR_GRID)
+				origin[bidx] = is_occ;
+			else g.updateCell(half+ry+j, half+rx+i, is_occ);
+		}
+	}
+	if (BLUR_GRID){
+		//Blur the buffer
+		int radius = 3;
+		float rad_den = 2*radius+1;
+		rad_den *= rad_den;
+		for (int i=0; i<rh; i++){
+			for (int j=0; j<rw; j++){
+				float val = 0;
+				for (int iy = i-radius; iy<i+radius+1; iy++){
+					for (int ix = j-radius; ix<j+radius+1; ix++){
+						int x = ix;
+						if (x < 0) x = 0;
+						if (x > rw-1) x = rw-1;
+						int y = iy;
+						if (y < 0) y = 0;
+						if (y > rh-1) y = rh-1;
+						val += origin[y*rw+x];
+					}
+				}
+				blurred[i*rw+j] = val/rad_den;
+			}
+		}
+		//Write buffer to grid
+		bidx = 0;
+		for (int i=0; i<rw; i++){
+			for (int j=0; j<rh; j++, bidx++){
+				g.updateCell(half+ry+j, half+rx+i, blurred[bidx] > .5);
+			}
+		}
 	}
 	v = readArr();
 	if (v.at(0) != "end")

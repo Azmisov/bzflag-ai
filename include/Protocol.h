@@ -2,6 +2,7 @@
 #define	PROTOCOL_H
 
 #define DEBUG 0
+#define BLUR_GRID 1
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -106,7 +107,13 @@ public:
 		vector<Flag*> &enemy_flags
 		//vector<Shot*> &shots
 	);
-	bool updateGrid(GameConstants &gc, Grid &g, int tank_idx);
+	bool updateGrid(
+		GameConstants &gc,
+		Grid &g,
+		int tank_idx,
+		char* origin,
+		float* blurred
+	);
 };
 
 #endif
