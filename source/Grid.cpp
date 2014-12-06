@@ -1,4 +1,6 @@
 #include "Grid.h"
+#include "Protocol.h"
+#include "Polygon.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

@@ -23,7 +23,6 @@
 #include "Flag.h"
 #include "Grid.h"
 
-class Grid;
 class Protocol;
 const int kBufferSize = 1024;
 

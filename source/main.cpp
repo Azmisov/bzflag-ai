@@ -12,16 +12,19 @@ TODO:
 
 #include <cstdio>
 #include <cmath>
+#include <ctime>
 #include <vector>
+#include <unistd.h>
+#include "glfw3/glfw3.h"
+#include "freeimage/FreeImage.h"
+#include <sys/stat.h>
+
 #include "Vector2d.h"
 #include "Polygon.h"
 #include "Flag.h"
 #include "Protocol.h"
 #include "Grid.h"
-#include <unistd.h>
-#include "glfw3/glfw3.h"
-#include "freeimage/FreeImage.h"
-#include <sys/stat.h>
+#include "Tanks/ClayPigeon.h"
 
 #define SCREENCAST_DIR "screencast/"
 #define DO_SCREENCAST 1
@@ -39,6 +42,7 @@ void save_buffer(int time);
 void exit_program();
 
 int main(int argc, char** argv){
+	srand(time(NULL));
 	//Parse command line arguments
 	if (argc > 0){
 		for (int i=0; i<argc; i++){
@@ -64,29 +68,32 @@ int main(int argc, char** argv){
 	board.gc.grabownflag = true;
 	board.gc.usegrid = false;
 	board.gc.gridwidth = 200;
-	if (!p->initialBoard<AbstractTank>(board)){
+	if (!p->initialBoard<ClayPigeon>(board)){
 		cout << "Failed to initialize board!" << endl;
 		exit(1);
 	}
-	WIN_SIZE = (int) board.gc.worldsize*0.6;
-	p->updateBoard(0, board);
-	
-	//Start visualization thread
-	pthread_t viz_thread;
-	pthread_create(&viz_thread, NULL, visualize, NULL);
+	if (board.tanks.size()){
+		WIN_SIZE = (int) board.gc.worldsize*0.6;
+		p->updateBoard(0, board);
+		
+		//Start visualization thread
+		//pthread_t viz_thread;
+		//pthread_create(&viz_thread, NULL, visualize, NULL);
 
-	int idx = 0;
-	while (!SHOULD_CLOSE){
-		if (idx % 50)
-			p->updateGrid(board);
-		double time = glfwGetTime();
-		glfwSetTime(0);
-		p->updateBoard(time, board);
-		//TODO: reassign goals here
-		for (int i=0; i < board.tanks.size(); i++)
-			board.tanks[i]->move(time);
-		usleep(3000);
-		idx++;
+		int idx = 0;
+		while (!SHOULD_CLOSE){
+			if (idx % 50)
+				p->updateGrid(board);
+			double time = glfwGetTime();
+			glfwSetTime(0);
+			p->updateBoard(time, board);
+			board.tanks[0]->coordinate(time);
+			for (int i=0; i < board.tanks.size(); i++)
+				board.tanks[i]->move(time);
+			usleep(3000);
+			printf("tick\n");
+			idx++;
+		}
 	}
 
 	delete board.grid;

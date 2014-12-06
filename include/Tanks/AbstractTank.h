@@ -1,6 +1,7 @@
 #ifndef ABSTRACT_TANK
 #define ABSTRACT_TANK
 
+#include "Vector2d.h"
 struct Board;
 
 //These are the only states we're allowed to use for tanks
@@ -14,6 +15,7 @@ enum TankMode {
 };
 
 class AbstractTank{
+protected:
 	int idx;
 public:
 	Board *board;
@@ -23,12 +25,17 @@ public:
 	Vector2d pos, vel, acc, dir;
 	
 	AbstractTank(int i, Board *b);
-	~AbstractTank();
+	virtual ~AbstractTank();
 	
+	//Computes angular velocity to best obtain desired angle
+	double getAngVel(Vector2d angle);
+	double getAngVel(double theta);
+	//Coordinates actions between tanks (called once for each timestep)
+	virtual void coordinate(double delta_t){};
 	//Decides which commands to give to the tank
-	void move(double delta_t);
+	virtual void move(double delta_t){};
 	//Update tank dynamics using kalman filter
-	void updateDynamics(double delta_t, float x, float y, float theta);
+	virtual void updateDynamics(double delta_t, float x, float y, float theta);
 };
 
 #endif

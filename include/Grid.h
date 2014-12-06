@@ -4,9 +4,10 @@
 #define BASE_PRIOR 0.5
 #define STABLE_PROB 0.97
 
-#include "Protocol.h"
+#include <vector>
 
 struct GameConstants;
+class Polygon;
 typedef unsigned int uint;
 
 class Grid{

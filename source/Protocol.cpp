@@ -339,7 +339,7 @@ bool Protocol::updateBoard(double delta_t, Board &board){
 }
 bool Protocol::updateGrid(Board &board){
 	//Update not needed
-	if (board.gc.usegrid && !board.grid->isStable())
+	if (!board.gc.usegrid || board.grid->isStable())
 		return true;
 	
 	vector<string> v;	
