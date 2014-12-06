@@ -28,3 +28,14 @@ TODO LIST
 - fields for stategically advantageous positions on map?
 - initially, we could set all tanks to DEFENSE mode; then, after a certain amount of time
 	we could send out search parties to attack the base that has the least defenses
+	
+	
+
+- compile
+- kalman filter
+- clay pigeon
+- nonconforming
+- regular tank
+	- targeting and shooting
+	- integrate with potential field lab
+	- some strategy

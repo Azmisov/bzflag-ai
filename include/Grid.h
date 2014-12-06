@@ -40,7 +40,7 @@ public:
 	bool canVectorize();
 	std::vector<Polygon*> vectorize();
 	
-	inline void updateCell(uint x, uint y, bool observation);
+	void updateCell(uint x, uint y, bool observation);
 };
 
 #endif

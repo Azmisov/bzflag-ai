@@ -1,7 +1,6 @@
 #ifndef ABSTRACT_TANK
 #define ABSTRACT_TANK
 
-#include "Protocol.h"
 struct Board;
 
 //These are the only states we're allowed to use for tanks
@@ -24,7 +23,7 @@ public:
 	Vector2d pos, vel, acc, dir;
 	
 	AbstractTank(int i, Board *b);
-	~AbstractTank(){}
+	~AbstractTank();
 	
 	//Decides which commands to give to the tank
 	void move(double delta_t);

@@ -100,7 +100,7 @@ std::vector<Polygon*> Grid::vectorize(){
 }
 
 //Updates probability that a cell is occupied, given the new observation
-inline void Grid::updateCell(uint x, uint y, bool observation){
+void Grid::updateCell(uint x, uint y, bool observation){
 	float prior = grid[x*size + y];
 	float prob1 = 0;
 	float prob2 = 0;

@@ -1,3 +1,4 @@
+#include "Protocol.h"
 #include "Tanks/AbstractTank.h"
 
 AbstractTank::AbstractTank(int i, Board *b){
@@ -6,7 +7,8 @@ AbstractTank::AbstractTank(int i, Board *b){
 }
 AbstractTank::~AbstractTank(){}
 
-AbstractTank::updateDynamics(double delta_t, float x, float y, float theta){
+void AbstractTank::move(double delta_t){}
+void AbstractTank::updateDynamics(double delta_t, float x, float y, float theta){
 	//Set direction
 	dir = Vector2d(cos(theta), sin(theta));
 	//Starting position
@@ -18,4 +20,5 @@ AbstractTank::updateDynamics(double delta_t, float x, float y, float theta){
 	}
 	//Kalman filter code
 	//TODO
+	
 }
