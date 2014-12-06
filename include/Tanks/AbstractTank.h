@@ -17,6 +17,16 @@ enum TankMode {
 class AbstractTank{
 protected:
 	int idx;
+	float deltaT = 1;
+	
+	Eigen::Matrix<float, 6, 6> F;
+	Eigen::Matrix<float, 6, 6> I;
+	Eigen::Matrix<float, 6, 6> sigmaX;
+	Eigen::Matrix<float, 2, 2> sigmaZ;
+	Eigen::Matrix<float, 2, 6> H;
+	Eigen::Matrix<float, 6, 1> muT;
+	Eigen::Matrix<float, 6, 6> sigmaT;
+
 public:
 	Board *board;
 	//Stategy variables
