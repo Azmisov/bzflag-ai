@@ -1,37 +1,35 @@
+/*
+TODO:
+- make Abstract tank
+- commandline args
+- pre/post agent code
+- port over to Eigen library
+- Kalman filter
+- shots/intersection code
+- intelligent filtering of obstacles
+- vectorize method in Grid
+*/
+
 #include <cstdio>
 #include <cmath>
 #include <vector>
 #include "Vector2d.h"
 #include "Polygon.h"
-#include "Tank.h"
-#include "dumbTank.h"
 #include "Flag.h"
 #include "Protocol.h"
 #include "Grid.h"
-#include "ExplorerTank.h"
 #include <unistd.h>
 #include "glfw3/glfw3.h"
 #include "freeimage/FreeImage.h"
 #include <sys/stat.h>
 
 #define SCREENCAST_DIR "screencast/"
-#define OCCGRID_WIDTH 200
 #define DO_SCREENCAST 1
 
 using namespace std;
 
-GameConstants gc;
-Polygon base;
-Grid *grid;
-vector<ExplorerTank*> tanks;
-vector<Flag*> flags;
-vector<ExplorerTank*> enemy_tanks;
-vector<Flag*> enemy_flags;
-vector<Polygon*> obstacles;
-
+Board board;
 unsigned char* img_buffer;
-char grid_origin[OCCGRID_WIDTH*OCCGRID_WIDTH];
-float grid_blurred[OCCGRID_WIDTH*OCCGRID_WIDTH];
 int WIN_SIZE;
 bool SHOULD_CLOSE = false;
 
@@ -41,6 +39,12 @@ void save_buffer(int time);
 void exit_program();
 
 int main(int argc, char** argv){
+	//Parse command line arguments
+	if (argc > 0){
+		for (int i=0; i<argc; i++){
+			printf("%s\n", argv[i]);
+		}
+	}
 	//Connect to the server
 	char* hostname = NULL;
 	int port = 50100;
@@ -49,50 +53,44 @@ int main(int argc, char** argv){
 		hostname = argv[1];
 		port = atoi(argv[2]);
 	}
-	Tank::protocol = Protocol(hostname, port);
-	dumbTank::protocol = Tank::protocol;
-	if (!Tank::protocol.isConnected()){
+	Protocol *p = new Protocol(hostname, port);
+	if (!p->isConnected()){
 		cout << "Can't connect to BZRC server!" << endl;
 		exit(1);
 	}
 	//Initialize the board
-	if (!Tank::protocol.initialBoard(gc, base, tanks, flags, enemy_tanks, enemy_flags, obstacles, false)){
+	board.p = p;
+	board.gc.friendlyfire = true;
+	board.gc.grabownflag = true;
+	board.gc.usegrid = false;
+	board.gc.gridwidth = 200;
+	if (!p->initialBoard<AbstractTank>(board)){
 		cout << "Failed to initialize board!" << endl;
 		exit(1);
 	}
-	Tank::protocol.updateBoard(gc, tanks, flags, enemy_tanks, enemy_flags);
-	Grid::truepositive = gc.truepositive;
-	Grid::truenegative = gc.truenegative;
-	WIN_SIZE = (int) gc.worldsize;
-	grid = new Grid(WIN_SIZE, WIN_SIZE);
+	WIN_SIZE = (int) board.gc.worldsize*0.6;
+	p->updateBoard(0, board);
 	
 	//Start visualization thread
 	pthread_t viz_thread;
 	pthread_create(&viz_thread, NULL, visualize, NULL);
-	
-	//Randomly assign goals
-	/*
-	int goal = 0, num_flags = enemy_flags.size();
-	for (int i=0; i<tanks.size(); i++){
-		tanks[i]->goals.push_back(enemy_flags[goal]);
-		goal = (goal+1) % num_flags;
-	}
-	*/
-	
+
 	int idx = 0;
-	while(true){
-		Tank::protocol.updateBoard(gc, tanks, flags, enemy_tanks, enemy_flags);
-		for (int i=0; i < tanks.size(); i++){
-			tanks[i]->evalPfield(idx, gc, *grid);
-			Tank::protocol.updateGrid(gc, *grid, i, grid_origin, grid_blurred);
-		}
+	while (!SHOULD_CLOSE){
+		if (idx % 50)
+			p->updateGrid(board);
+		double time = glfwGetTime();
+		glfwSetTime(0);
+		p->updateBoard(time, board);
+		//TODO: reassign goals here
+		for (int i=0; i < board.tanks.size(); i++)
+			board.tanks[i]->move(time);
 		usleep(3000);
 		idx++;
 	}
-	
-	SHOULD_CLOSE = true;
-	while (SHOULD_CLOSE) ;
-	delete grid;
+
+	delete board.grid;
+	delete board.p;
 	return 0;
 }
 
@@ -109,8 +107,8 @@ void graphFields(){
 	fprintf(f, "unset key\nset size square\n");
 	//Draw obstacles
 	fprintf(f, "unset arrow\n");
-	for (int p=0; p<obstacles.size(); p++){
-		Polygon *poly = obstacles[p];
+	for (int p=0; p<board.obstacles.size(); p++){
+		Polygon *poly = board.obstacles[p];
 		int len = poly->size();
 		Vector2d v2 = (*poly)[len-1], v1;
 		for (int i=0; i<len; i++){
@@ -126,9 +124,9 @@ void graphFields(){
 		for (double j=min[1]; j<max[1]; j+=spacing){
 			Vector2d force = Vector2d(0);
 			
-			for (int p=0; p<obstacles.size(); p++)
-				force += .4*obstacles[p]->potentialField(Vector2d(i, j), dummy_dir);
-			force -= 40*enemy_flags[0]->potentialField(Vector2d(i, j), dummy_dir);
+			for (int p=0; p<board.obstacles.size(); p++)
+				force += .4*board.obstacles[p]->potentialField(Vector2d(i, j), dummy_dir);
+			force -= 40*board.enemy_flags[0]->potentialField(Vector2d(i, j), dummy_dir);
 			force *= .8;
 			fprintf(f, "%f %f %f %f\n", i, j, force[0], force[1]);
 		}
@@ -175,39 +173,41 @@ void *visualize(void *args){
 	FreeImage_Initialise();
 	img_buffer = new unsigned char[WIN_SIZE*WIN_SIZE*3];
 	
-	int tank_size = tanks.size();
+	int tank_size = board.tanks.size();
 	int frame = 0, frame_num = 0;
 	while (!glfwWindowShouldClose(window)){
 		glClear(GL_COLOR_BUFFER_BIT);
-		glDrawPixels(WIN_SIZE, WIN_SIZE, GL_LUMINANCE, GL_FLOAT, grid->grid);
+		if (board.gc.usegrid)
+			glDrawPixels(WIN_SIZE, WIN_SIZE, GL_LUMINANCE, GL_FLOAT, board.grid->grid);
+		//Obstacles
+		glColor3f(0,0,1);
+		glBegin(GL_POINTS);
+		for (int i=0; i<board.obstacles.size(); i++){
+			for (int p=0; p<board.obstacles[i]->size(); p++)
+				glVertex2dv((*board.obstacles[i])[p].data);
+		}
+		glEnd();
 		//Tanks
 		glColor3f(1,.5,0);
 		glBegin(GL_POINTS);
 		for (int i=0; i<tank_size; i++)
-			glVertex2dv(tanks[i]->loc.data);
+			glVertex2dv(board.tanks[i]->pos.data);
 		glEnd();
+		/*
 		//Goals
 		glColor3f(0,1,0);
 		glBegin(GL_POINTS);
 		for (int i=0; i<tank_size; i++){
-			for (int j=0; j<tanks[i]->goals.size(); j++)
-				glVertex2dv(tanks[i]->goals[j]->loc.data);
+			for (int j=0; j<board.tanks[i]->goals.size(); j++)
+				glVertex2dv(board.tanks[i]->goals[j]->loc.data);
 		}
 		glEnd();
-		//Obstacles
-		glColor3f(0,0,1);
-		glBegin(GL_POINTS);
-		for (int i=0; i<tank_size; i++){
-			for (int j=0; j<tanks[i]->obstacles.size(); j++)
-				glVertex2dv(tanks[i]->obstacles[j]->loc.data);
-		}
-		glEnd();
+		*/
 		glfwSwapBuffers(window);
 		usleep(10000);
 		if (DO_SCREENCAST && frame++ % 400 == 0)
 			save_buffer(frame_num++);
 		glfwPollEvents();
-		if (SHOULD_CLOSE) break;
 	}
 
 	//Exit
@@ -216,7 +216,7 @@ void *visualize(void *args){
 	
 	glfwDestroyWindow(window);
 	glfwTerminate();
-	SHOULD_CLOSE = false;
+	SHOULD_CLOSE = true;
 	pthread_exit(NULL);
 }
 

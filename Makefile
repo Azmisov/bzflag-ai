@@ -4,7 +4,7 @@ OBJECT_DIR := build
 LIBS := include/glfw3/libglfw3.a include/freeimage/libfreeimage.a -lGL -lX11 -lXxf86vm -lm -lpthread -lXrandr -lXi
 
 CC := g++
-CFLAGS := -I$(HEADER_DIR)
+CFLAGS := -std=c++11 -I$(HEADER_DIR)
 
 SOURCES := $(wildcard $(SOURCE_DIR)/*.cpp)
 HEADERS := $(wildcard $(HEADER_DIR)/*.h)
@@ -15,7 +15,7 @@ $(OBJECT_DIR)/%.o: $(SOURCE_DIR)/%.cpp $(HEADERS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 make: $(OBJECTS)
-	$(CC) -o agent $(OBJECTS) -I$(HEADER_DIR) $(LIBS) -O3
+	$(CC) -o agent $(OBJECTS) -I$(HEADER_DIR) $(LIBS) -O3 -march=native
 
 clean:
 	rm -f $(OBJECT_DIR)/*

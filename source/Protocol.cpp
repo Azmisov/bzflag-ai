@@ -128,7 +128,7 @@ bool Protocol::handshake() {
 	if (!strcmp(LineText, "bzrobots 1")){
 		const char * Command="agent 1";
 		int temp = sendLine(Command);
-		if(temp == 1)  return 1;
+		if(temp == 1)	return 1;
 		else resetReplyBuffer();
 		return false;
 	}
@@ -144,11 +144,11 @@ vector<string> Protocol::readArr() {
 		readLine(LineText);
 		if (DEBUG) cout << LineText << endl;
 	}
-    string buf;
-    stringstream ss(LineText);
-    list_buffer.clear();
-    while (ss >> buf)
-        list_buffer.push_back(buf);
+		string buf;
+		stringstream ss(LineText);
+		list_buffer.clear();
+		while (ss >> buf)
+				list_buffer.push_back(buf);
 	return list_buffer;
 }
 void Protocol::readAck() {
@@ -175,7 +175,12 @@ void Protocol::printLine() {
 	readLine(LineText);
 	if (DEBUG) cout << LineText << endl;
 }
+
+//General commands
+bool Protocol::taunt(char* message){
 	
+}
+
 //Tank commands
 bool Protocol::shoot(int idx){
 	//Perform a shoot request.
@@ -219,16 +224,10 @@ bool Protocol::accely(int idx, double val){
 }
 
 //Fetch information
-bool Protocol::initialBoard(
-	GameConstants &gc,
-	Polygon &base,
-	vector<ExplorerTank*> &tanks,
-	vector<Flag*> &flags,
-	vector<ExplorerTank*> &enemy_tanks,
-	vector<Flag*> &enemy_flags,
-	vector<Polygon*> &obstacles,
-	bool use_obstacles
-){
+template <class TANK>
+bool Protocol::initialBoard(Board &board){
+	board.p = this;
+
 	//Request a dictionary of game constants
 	sendLine("constants");
 	readAck();
@@ -242,21 +241,21 @@ bool Protocol::initialBoard(
 		string val = v.at(2);
 		double dval = atof(val.c_str());
 		//Yeah, this is inefficient; but we only run it once
-		if (name == "team") gc.mycolor = val;
-		else if (name == "tankalive") gc.tankalive = val;
-		else if (name == "tankdead") gc.tankdead = val;
-		else if (name == "worldsize") gc.worldsize = dval;
-		else if (name == "tankradius") gc.tankradius = dval;
-		else if (name == "tankangvel") gc.tankangvel = dval;
-		else if (name == "tankspeed") gc.tankspeed = dval;
-		else if (name == "linearaccel") gc.linearaccel = dval;
-		else if (name == "angularaccel") gc.angularaccel = dval;
-		else if (name == "shotradius") gc.shotradius = dval;
-		else if (name == "shotrange") gc.shotrange = dval;
-		else if (name == "shotspeed") gc.shotspeed = dval;
-		else if (name == "flagradius") gc.flagradius = dval;
-		else if (name == "truenegative") gc.truenegative = dval;
-		else if (name == "truepositive") gc.truepositive = dval;
+		if (name == "team") board.gc.mycolor = val;
+		else if (name == "tankalive") board.gc.tankalive = val;
+		else if (name == "tankdead") board.gc.tankdead = val;
+		else if (name == "worldsize") board.gc.worldsize = dval;
+		else if (name == "tankradius") board.gc.tankradius = dval;
+		else if (name == "tankangvel") board.gc.tankangvel = dval;
+		else if (name == "tankspeed") board.gc.tankspeed = dval;
+		else if (name == "linearaccel") board.gc.linearaccel = dval;
+		else if (name == "angularaccel") board.gc.angularaccel = dval;
+		else if (name == "shotradius") board.gc.shotradius = dval;
+		else if (name == "shotrange") board.gc.shotrange = dval;
+		else if (name == "shotspeed") board.gc.shotspeed = dval;
+		else if (name == "flagradius") board.gc.flagradius = dval;
+		else if (name == "truenegative") board.gc.truenegative = dval;
+		else if (name == "truepositive") board.gc.truepositive = dval;
 		v.clear();
 		v = readArr();
 	}
@@ -274,14 +273,14 @@ bool Protocol::initialBoard(
 	while (v.at(0) == "team"){
 		int count = atoi(v.at(2).c_str());
 		//This is our team
-		if (v.at(1) == gc.mycolor){
+		if (v.at(1) == board.gc.mycolor){
 			for (int idx=0; idx<count; idx++)
-				tanks.push_back(new ExplorerTank(idx));
+				board.tanks.push_back(new TANK(idx, &board));
 		}
 		//This is the enemy
 		else{
 			for (int idx=0; idx<count; idx++)
-				enemy_tanks.push_back(new ExplorerTank(-1));
+				board.enemy_tanks.push_back(new AbstractTank(-1, &board));
 		}
 		v.clear();
 		v = readArr();
@@ -289,8 +288,11 @@ bool Protocol::initialBoard(
 	if (v.at(0) != "end")
 		return false;
 	
+	//Initialize the grid object
+	if (board.gc.usegrid)
+		board.grid = new Grid(board.gc);
 	//Get a list of obstacles
-	if (use_obstacles){
+	else{
 		sendLine("obstacles");
 		readAck();
 		v = readArr();
@@ -306,7 +308,7 @@ bool Protocol::initialBoard(
 					atof(v.at(i+1).c_str())
 				);
 			}
-			obstacles.push_back(p);
+			board.obstacles.push_back(p);
 			v.clear();
 			v = readArr();
 		}
@@ -324,9 +326,9 @@ bool Protocol::initialBoard(
 	v = readArr();
 	while (v.at(0) == "base"){
 		//We only care about our own base; don't store other players' bases
-		if (v.at(1) == gc.mycolor){
+		if (v.at(1) == board.gc.mycolor){
 			for (int i=2; i<v.size(); i+=2){
-				base.addPoint(
+				board.base.addPoint(
 					atof(v.at(i).c_str()),
 					atof(v.at(i+1).c_str())
 				);
@@ -348,10 +350,10 @@ bool Protocol::initialBoard(
 	v = readArr();
 	while (v.at(0) == "flag"){
 		Flag *f = new Flag();
-		f->radius = gc.flagradius;
-		if (v.at(1) == gc.mycolor)
-			flags.push_back(f);
-		else enemy_flags.push_back(f);		
+		f->radius = board.gc.flagradius;
+		if (v.at(1) == board.gc.mycolor)
+			board.flags.push_back(f);
+		else board.enemy_flags.push_back(f);		
 		v.clear();
 		v = readArr();
 	}
@@ -361,14 +363,7 @@ bool Protocol::initialBoard(
 	//Hooray, no errors!!
 	return true;
 }
-bool Protocol::updateBoard(
-	GameConstants &gc,
-	vector<ExplorerTank*> &tanks,
-	vector<Flag*> &flags,
-	vector<ExplorerTank*> &enemy_tanks,
-	vector<Flag*> &enemy_flags
-	//vector<Shot*> &shots
-){
+bool Protocol::updateBoard(double delta_t, Board &board){
 	//Update tank positions
 	sendLine("mytanks");
 	readAck();
@@ -377,34 +372,34 @@ bool Protocol::updateBoard(
 		return false;
 	v.clear();
 	v = readArr();
-	vector<ExplorerTank*>::iterator tank_iter = tanks.begin();
+	vector<AbstractTank*>::iterator tank_iter = board.tanks.begin();
 	while(v.at(0) == "mytank"){
-		/*
 		//Update alive/dead status
-		bool alive = v.at(3) == gc.tankalive;
+		bool alive = v.at(3) == board.gc.tankalive;
 		if (alive){
+			//Used to be dead; needs to be assigned a goal
 			if ((*tank_iter)->mode == DEAD)
 				(*tank_iter)->mode = IDLE;
+			//Update dynamics
+			(*tank_iter)->updateDynamics(
+				delta_t,
+				atof(v.at(7).c_str()),
+				atof(v.at(8).c_str()),
+				atof(v.at(9).c_str())
+			);
+			/* REPLACED BY KALMAN FILTER
+			//Update velocities
+			(*tank_iter)->vel_linear = Vector2d(
+				atof(v.at(10).c_str()),
+				atof(v.at(11).c_str())
+			);
+			(*tank_iter)->vel_angular = atof(v.at(12).c_str());
+			*/
+			//MyTank.shots_avail=atoi(v.at(4).c_str());
+			//MyTank.time_to_reload=atof(v.at(5).c_str());
+			//MyTank.flag=v.at(6);
 		}
 		else (*tank_iter)->mode = DEAD;
-		*/
-		//Update position
-		(*tank_iter)->loc = Vector2d(
-			atof(v.at(7).c_str()),
-			atof(v.at(8).c_str())
-		);
-		//Update angle
-		double theta = atof(v.at(9).c_str());
-		(*tank_iter)->dir = Vector2d(cos(theta), sin(theta));
-		//Update velocities
-		(*tank_iter)->vel_linear = Vector2d(
-			atof(v.at(10).c_str()),
-			atof(v.at(11).c_str())
-		);
-		(*tank_iter)->vel_angular = atof(v.at(12).c_str());
-		//MyTank.shots_avail=atoi(v.at(4).c_str());
-		//MyTank.time_to_reload=atof(v.at(5).c_str());
-		//MyTank.flag=v.at(6);
 		tank_iter++;
 		v.clear();
 		v=readArr();
@@ -420,21 +415,20 @@ bool Protocol::updateBoard(
 		return false;
 	v.clear();
 	v = readArr();
-	tank_iter = enemy_tanks.begin();
+	tank_iter = board.enemy_tanks.begin();
 	while (v.at(0) == "othertank"){
-		/*
 		//Update alive/dead status
-		bool alive = v.at(3) == gc.tankalive;
+		bool alive = v.at(3) == board.gc.tankalive;
 		(*tank_iter)->mode = alive ? IDLE : DEAD;
-		*/
-		//Update position
-		(*tank_iter)->loc = Vector2d(
-			atof(v.at(5).c_str()),
-			atof(v.at(6).c_str())
-		);
-		//Update angle
-		double theta = atof(v.at(7).c_str());
-		(*tank_iter)->dir = Vector2d(cos(theta), sin(theta));
+		if (alive){
+			//Update dynamics
+			(*tank_iter)->updateDynamics(
+				delta_t,
+				atof(v.at(5).c_str()),
+				atof(v.at(6).c_str()),
+				atof(v.at(7).c_str())
+			);
+		}
 		//OtherTank.flag=v.at(4);
 		tank_iter++;
 		v.clear();
@@ -451,17 +445,17 @@ bool Protocol::updateBoard(
 		return false;
 	v.clear();
 	v = readArr();
-	vector<Flag*>::iterator flags_iter = flags.begin();
-	vector<Flag*>::iterator enemy_flags_iter = enemy_flags.begin();
+	vector<Flag*>::iterator flags_iter = board.flags.begin();
+	vector<Flag*>::iterator enemy_flags_iter = board.enemy_flags.begin();
 	while (v.at(0) == "flag"){
 		Vector2d pos = Vector2d(
 			atof(v.at(3).c_str()),
 			atof(v.at(4).c_str())
 		);
 		bool isPossessed = v.at(2) != "none";
-		bool havePosession = v.at(2) == gc.mycolor;
+		bool havePosession = v.at(2) == board.gc.mycolor;
 		//vector<Flag*>::iterator &ref = v.at(1) == gc.mycolor ? flags_iter : enemy_flags_iter;
-		if (v.at(1) == gc.mycolor){
+		if (v.at(1) == board.gc.mycolor){
 			(*flags_iter)->loc = pos;
 			(*flags_iter)->isPossessed = isPossessed;
 			(*flags_iter)->havePosession = havePosession;
@@ -478,82 +472,88 @@ bool Protocol::updateBoard(
 	}
 	if (v.at(0) != "end")
 		return false;
-		
+
 	//Hooray, there were no errors!
 	return true;
 }
-bool Protocol::updateGrid(
-	GameConstants &gc,
-	Grid &g,
-	int tank_idx,
-	char* origin,
-	float* blurred
-){
-	//Get grid for a single tank
-	char char_buff[13];
-	sprintf(char_buff, "occgrid %d", tank_idx);
-	sendLine(char_buff);
-	readAck();
-	vector<string> v = readArr();
-	if (v.at(0) != "begin")
-		return false;
-	//Get occgrid dimensions
-	v = readArr();
-	int rx, ry, rw, rh;
-	if (sscanf(v.at(1).c_str(), "%d,%d", &rx, &ry) != 2)
-		return false;
-	v = readArr();
-	if (sscanf(v.at(1).c_str(), "%dx%d", &rw, &rh) != 2)
-		return false;
-	//Get occgrid values
-	int half = (int) (gc.worldsize/2.0);
-	int bidx = 0;
-	for (int i=0; i<rw; i++){
-		v = readArr();
-		string& occ = v.at(0);
-		if (occ.size() != rh)
-			return false;
-		for (int j=0; j<rh; j++, bidx++){
-			bool is_occ = occ[j] == '1';
-			if (BLUR_GRID)
-				origin[bidx] = is_occ;
-			else g.updateCell(half+ry+j, half+rx+i, is_occ);
-		}
-	}
-	if (BLUR_GRID){
-		//Blur the buffer
-		int radius = 3;
-		float rad_den = 2*radius+1;
-		rad_den *= rad_den;
-		for (int i=0; i<rh; i++){
-			for (int j=0; j<rw; j++){
-				float val = 0;
-				for (int iy = i-radius; iy<i+radius+1; iy++){
-					for (int ix = j-radius; ix<j+radius+1; ix++){
-						int x = ix;
-						if (x < 0) x = 0;
-						if (x > rw-1) x = rw-1;
-						int y = iy;
-						if (y < 0) y = 0;
-						if (y > rh-1) y = rh-1;
-						val += origin[y*rw+x];
-					}
-				}
-				blurred[i*rw+j] = val/rad_den;
-			}
-		}
-		//Write buffer to grid
-		bidx = 0;
-		for (int i=0; i<rw; i++){
-			for (int j=0; j<rh; j++, bidx++){
-				g.updateCell(half+ry+j, half+rx+i, blurred[bidx] > .5);
-			}
-		}
-	}
-	v = readArr();
-	if (v.at(0) != "end")
-		return false;
+bool Protocol::updateGrid(Board &board){
+	//Update not needed
+	if (board.gc.usegrid && !board.grid->isStable())
+		return true;
 	
-	//No errors!
+	vector<string> v;	
+	for (int i=0; i < board.tanks.size(); i++){
+		//Would it be worth it to get a grid value here?
+		if (board.tanks[i]->mode == DEAD)
+			continue;
+		int posx = board.tanks[i]->pos[0];
+		int posy = board.tanks[i]->pos[1];
+		if (board.grid->isStable(posx, posy))
+			continue;
+		//Get grid for a single tank
+		char char_buff[13];
+		sprintf(char_buff, "occgrid %d", i);
+		sendLine(char_buff);
+		readAck();
+		v = readArr();
+		if (v.at(0) != "begin")
+			return false;
+		//Get occgrid dimensions
+		v = readArr();
+		int rx, ry, rw, rh;
+		if (sscanf(v.at(1).c_str(), "%d,%d", &rx, &ry) != 2)
+			return false;
+		v = readArr();
+		if (sscanf(v.at(1).c_str(), "%dx%d", &rw, &rh) != 2)
+			return false;
+		int half = (int) (board.gc.worldsize/2.0);
+		ry += half;
+		rx += half;
+		//Read raw values into buffer
+		for (int x=0; x<rw; x++){
+			v = readArr();
+			string& occ = v.at(0);
+			if (occ.size() != rh)
+				return false;
+			for (int y=0; y<rh; y++)
+				board.grid->buffer[x*rh+y] = occ[y] == '1';
+		}
+		//Blur the buffer
+		int radius = OCC_BLUR;
+		int diam = radius*2+1;
+		int half_cells = diam*diam/2;
+		diam--;
+		//Sum vertically
+		for (int x=0; x<rw; x++){
+			int v=0, y=0;
+			//We only use border cells for averaging
+			for (; y<diam; y++)
+				v += board.grid->buffer[x*rh+y];
+			//Swap out old value with the sum
+			for (; y<rh; y++){
+				v += board.grid->buffer[x*rh+y];
+				int t = board.grid->buffer[x*rh+y-radius];
+				board.grid->buffer[x*rh+y-radius] = v;
+				v -= t;
+			}
+		}
+		//Sum horizontally
+		for (int y=radius; y<rh-radius; y++){
+			int v=0, x=0;
+			//Skip border cells, like before
+			for (; x<diam; x++)
+				v += board.grid->buffer[x*rh+y];
+			for (; x<rw; x++){
+				v += board.grid->buffer[x*rh+y];
+				//Update cell with blurred value
+				board.grid->updateCell(ry+y, rx+x, v > half_cells);
+				v -= board.grid->buffer[(x-radius)*rh+y];
+			}
+		}
+		//End occgrid command
+		v = readArr();
+		if (v.at(0) != "end")
+			return false;
+	}
 	return true;
 }

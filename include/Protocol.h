@@ -2,7 +2,7 @@
 #define	PROTOCOL_H
 
 #define DEBUG 0
-#define BLUR_GRID 1
+#define OCC_BLUR 2
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -14,22 +14,29 @@
 #include <stdlib.h>
 #include <iostream>
 #include <vector>
+#include <map>
 #include <math.h>
 
 #include "Vector2d.h"
+#include "Tanks/AbstractTank.h"
 #include "Polygon.h"
-#include "ExplorerTank.h"
 #include "Flag.h"
 #include "Grid.h"
 
-class ExplorerTank;
-
+class Grid;
+class Protocol;
 const int kBufferSize = 1024;
 
 using namespace std;
 
 //There are a couple other constants available, but I don't think we'll need them
 typedef struct GameConstants {
+	//Defined as command line options
+	bool friendlyfire;
+	bool grabownflag;
+	bool usegrid;
+	int gridwidth;
+	//Defined by server
 	string mycolor;
 	string tankalive;
 	string tankdead;
@@ -46,6 +53,18 @@ typedef struct GameConstants {
 	double truenegative;
 	double truepositive;
 } GameConstants;
+
+typedef struct Board{
+	Protocol *p;
+	GameConstants gc;
+	Polygon base;
+	Grid *grid;
+	vector<AbstractTank*> tanks;
+	vector<Flag*> flags;
+	vector<AbstractTank*> enemy_tanks;
+	vector<Flag*> enemy_flags;
+	vector<Polygon*> obstacles;
+} Board;
 
 class Protocol {
 private:
@@ -80,7 +99,10 @@ public:
 	virtual ~Protocol();
 	bool isConnected();
 	bool close();
-        
+    
+    //General commands
+    bool taunt(char* message);
+    
 	//Tank commands
 	bool shoot(int idx);
 	bool speed(int idx, double val);
@@ -89,31 +111,10 @@ public:
 	bool accely(int idx, double val);
 
 	//Fetch information
-	bool initialBoard(
-		GameConstants &gc,
-		Polygon &base,
-		vector<ExplorerTank*> &tanks,
-		vector<Flag*> &flags,
-		vector<ExplorerTank*> &enemy_tanks,
-		vector<Flag*> &enemy_flags,
-		vector<Polygon*> &obstacles,
-		bool use_obstacles
-	);
-	bool updateBoard(
-		GameConstants &gc,
-		vector<ExplorerTank*> &tanks,
-		vector<Flag*> &flags,
-		vector<ExplorerTank*> &enemy_tanks,
-		vector<Flag*> &enemy_flags
-		//vector<Shot*> &shots
-	);
-	bool updateGrid(
-		GameConstants &gc,
-		Grid &g,
-		int tank_idx,
-		char* origin,
-		float* blurred
-	);
+	template <class TANK>
+	bool initialBoard(Board &board);
+	bool updateBoard(double delta_t, Board &board);
+	bool updateGrid(Board &board);
 };
 
 #endif
