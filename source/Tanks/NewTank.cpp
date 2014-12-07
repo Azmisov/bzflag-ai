@@ -4,10 +4,29 @@
 #include <math.h>
 
 void NewTank::coordinate(double delta_t){
-	return;
+	int found = -1;
+	//Assign an enemy tank to target
+	for (int i=0; i<board->tanks.size(); i++){
+		NewTank *t = dynamic_cast<NewTank*>(board->tanks[i]);
+		if (t->target_tank == -1 || board->enemy_tanks[t->target_tank]->mode == DEAD){
+			if (found == -1){
+				for (int j=0; j<board->enemy_tanks.size(); j++){
+					//Pick first tank that is not dead
+					if (board->enemy_tanks[j]->mode != DEAD){
+						found = j;
+						break;
+					}
+				}
+			}
+			//Assign the tank
+			t->target_tank = found;
+			printf("Shooting at tank %d\n", found);
+			if (found == -1) return;
+		}
 	}
 }
-void NewTank::move(double delta_t){
+void NewTank::move(double delta_t){\
+	/*
 	double pi = 3.1415926435;
 	Vector2d result = Vector2d(0);
 	
@@ -32,28 +51,55 @@ void NewTank::move(double delta_t){
 	}
 	
 	Tank::protocol.angvel(idx, -angDiff/pi);
+	*/
+	
+	if (target_tank == -1)
+		return;
+	double ang_vel = aim(board->enemy_tanks[target_tank]);
+	printf("%f\n",ang_vel);
+	if (fabs(ang_vel) < .02)
+		board->p->shoot(idx);
+	else board->p->angvel(idx, ang_vel);
 }
 
-double aim(AbstractTank enemy)
-{
+double NewTank::aim(AbstractTank *enemy){
+	no_intersect = false;
+	//If we aren't intersecting the tank's path, always go towards the tank
+	double magnitude = 1;
+	bool toward_tank = true;
+	//Temp vars
+	double bspeed, bullet_t, tank_t = INFINITY, dist;
 	//Find time when tank intersects bullet's path
-	double[] intersections = new double[4];
+	double intersections[4];
 	for (int i=0; i <= 1; i++)
 	{
 		double v1 = enemy->acc[i];
 		double v2 = enemy->vel[i]-dir[i];
 		double v3 = enemy->pos[i]-pos[i];
 		double t1 = v2*v2 - 2*v1*v3;
-		if (t1 < 0 || fabs(v1) > 0.0001)
-			return M_INFINITY;
-		t1 = Math.sqrt(t1);
+		if (t1 < 0 || fabs(v1) < 0.0001){
+			printf("\tno isect %d, %f\n",i,v1);
+			goto GETANGVEL;
+		}
+		t1 = sqrt(t1);
 		intersections[i*2] = (-v2 + t1)/v1;
 		intersections[i*2+1] = (-v2 - t1)/v1;
 	}
-	double tank_t = M_INFINITY;
-	for (int i=0; i <= 1; i++)
+	printf("\t(%f,%f) ? (%f,%f)\n",
+		intersections[0],
+		intersections[1],
+		intersections[2],
+		intersections[3]
+	);
+	if (intersections[0] > 0 || intersections[1] > 0){
+		printf("found it!!!\n");
+		double temp_t = intersections[intersections[1] > 0];
+		enemy_pos = dir*temp_t + pos;
+		//bullet_pos = dir*temp_t + pos;
+	}
+	for (int i=0; i <= 1; i++){
 		for (int j=2; j <= 3; j++){
-			if (fabs(intersections[i]-intersections[j]) < 0.05){
+			if (fabs(intersections[i]-intersections[j]) < 100){
 				double t = (intersections[i]+intersections[j])/2.0;
 				//Pick the intersection that is closest to happening
 				if (fabs(t) < fabs(tank_t))
@@ -61,27 +107,36 @@ double aim(AbstractTank enemy)
 			}
 		}
 	}
-	if (best_t == M_INFINITY || best_t < 0)
-		return best_t;
+	if (tank_t == INFINITY || tank_t < 0){
+		printf("\tx and y do not meet %f\n",tank_t);
+		goto GETANGVEL;
+	}
 	//Find time when bullet intersects tank's path
-	double bspeed = vel.length() + board->gc.shotspeed;
-	double bullet_t = tank_t/bspeed;
-	double dist = fabs(tank_t*(1-bspeed)) - (board->gc.tankradius+board->gc.shotradius);
+	bspeed = vel.length() + board->gc.shotspeed;
+	bullet_t = tank_t/bspeed;
+	
+	//no_intersect = false;
+	enemy_pos = dir*tank_t + pos;
+	bullet_pos = dir*bullet_t + pos;
+	
+	dist = fabs(tank_t*(1-bspeed)) - (board->gc.tankradius+board->gc.shotradius);
 	if (dist < 0) dist = 0;
-	double magnitude = dist/20.0;
+	magnitude = dist/20.0;
 	if (dist > 1) dist = 1;
+	//This is the direction we should go to hit it
+	toward_tank = bullet_t < tank_t;
+	
 	//Find which way we should rotate
-	double desiredAngle = atan2(enemy->pos[1], enemy->pos[0]);
+	GETANGVEL:	
+	double desiredAngle = atan2(enemy->pos[1]-pos[1], enemy->pos[0]-pos[0]);
 	double currentAngle = atan2(dir[1], dir[0]);
 	double angDiff = currentAngle - desiredAngle;
 	while (angDiff < -M_PI)
 		angDiff += (2*M_PI);
 	while (angDiff > M_PI)
 		angDiff -= (2*M_PI);
-	//sign = away from tank
-	//-sign = towards tank
 	int sign = angDiff > 0 ? 1 : -1;
-	if (bullet_t < tank_t)
+	if (toward_tank)
 		sign = -sign;
 	return sign*magnitude;
 }

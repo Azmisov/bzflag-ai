@@ -19,8 +19,8 @@ void ClayPigeon::coordinate(double delta_t){
 	}
 }
 void ClayPigeon::move(double delta_t){
-	if (stationary) return;
-	double v = getAngVel(target_dir);
-	if (v < .01) return;
-	board->p->angvel(idx, v);
+	//if (stationary) return;
+	//double v = getAngVel(target_dir);
+	//if (v < .01) return;
+	//board->p->angvel(idx, v);
 }

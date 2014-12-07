@@ -24,10 +24,10 @@ TODO:
 #include "Flag.h"
 #include "Protocol.h"
 #include "Grid.h"
-#include "Tanks/WildTank.h"
+#include "Tanks/NewTank.h"
 
 #define SCREENCAST_DIR "screencast/"
-#define DO_SCREENCAST 1
+#define DO_SCREENCAST 0
 
 using namespace std;
 
@@ -68,7 +68,7 @@ int main(int argc, char** argv){
 	board.gc.grabownflag = true;
 	board.gc.usegrid = false;
 	board.gc.gridwidth = 200;
-	if (!p->initialBoard<WildTank>(board)){
+	if (!p->initialBoard<NewTank>(board)){
 		cout << "Failed to initialize board!" << endl;
 		exit(1);
 	}
@@ -194,18 +194,45 @@ void *visualize(void *args){
 				glVertex2dv((*board.obstacles[i])[p].data);
 		}
 		glEnd();
-		//Tanks
-		glColor3f(0,1,0);
-		glBegin(GL_POINTS);
-		for (int i=0; i<tank_size; i++)
-			glVertex2dv(board.tanks[i]->pos.data);
-		glEnd();
 		//Enemy tanks
 		glColor3f(1,0,0);
 		glBegin(GL_POINTS);
 		for (int i=0; i<enemy_tank_size; i++)
 			glVertex2dv(board.enemy_tanks[i]->pos.data);
 		glEnd();
+		//Tanks
+		glColor3f(0,1,0);
+		glBegin(GL_POINTS);
+		for (int i=0; i<tank_size; i++)
+			glVertex2dv(board.tanks[i]->pos.data);
+		glEnd();
+		
+		//Aiming vis
+		//*
+		NewTank *t = dynamic_cast<NewTank*>(board.tanks[0]);
+		glBegin(GL_POINTS);
+			//Tank we're targeting
+			if (t->no_intersect)
+				glColor3f(1, 1, 1);
+			else glColor3f(1, 0.5, 0);
+			//Visualize motion
+			AbstractTank *e = board.enemy_tanks[t->target_tank];
+			for (int i=0; i<10; i++){
+				double t = i*.5;
+				Vector2d p = e->pos + t*e->vel + .5*t*t*e->acc;
+				glVertex2dv(p.data);
+			}
+			//Predicted location
+			if (!t->no_intersect){
+				glColor3f(1, 1, 0);
+				glVertex2dv(t->enemy_pos.data);
+				glColor3f(1, 0, 1);
+				//glVertex2dv(t->bullet_pos.data);
+				//glVertex2dv(t->bullet_pos.data);
+			}
+		glEnd();
+		//*/
+		
 		/*
 		//Goals
 		glColor3f(0,1,0);
