@@ -24,7 +24,7 @@ TODO:
 #include "Flag.h"
 #include "Protocol.h"
 #include "Grid.h"
-#include "Tanks/ClayPigeon.h"
+#include "Tanks/WildTank.h"
 
 #define SCREENCAST_DIR "screencast/"
 #define DO_SCREENCAST 1
@@ -68,17 +68,17 @@ int main(int argc, char** argv){
 	board.gc.grabownflag = true;
 	board.gc.usegrid = false;
 	board.gc.gridwidth = 200;
-	if (!p->initialBoard<ClayPigeon>(board)){
+	if (!p->initialBoard<WildTank>(board)){
 		cout << "Failed to initialize board!" << endl;
 		exit(1);
 	}
 	if (board.tanks.size()){
-		WIN_SIZE = (int) board.gc.worldsize*0.6;
+		WIN_SIZE = (int) board.gc.worldsize;
 		p->updateBoard(0, board);
 		
 		//Start visualization thread
-		//pthread_t viz_thread;
-		//pthread_create(&viz_thread, NULL, visualize, NULL);
+		pthread_t viz_thread;
+		pthread_create(&viz_thread, NULL, visualize, NULL);
 
 		int idx = 0;
 		while (!SHOULD_CLOSE){
@@ -90,8 +90,7 @@ int main(int argc, char** argv){
 			board.tanks[0]->coordinate(time);
 			for (int i=0; i < board.tanks.size(); i++)
 				board.tanks[i]->move(time);
-			usleep(3000);
-			printf("tick\n");
+			usleep(1000*100);
 			idx++;
 		}
 	}
@@ -181,6 +180,7 @@ void *visualize(void *args){
 	img_buffer = new unsigned char[WIN_SIZE*WIN_SIZE*3];
 	
 	int tank_size = board.tanks.size();
+	int enemy_tank_size = board.enemy_tanks.size();
 	int frame = 0, frame_num = 0;
 	while (!glfwWindowShouldClose(window)){
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -195,10 +195,16 @@ void *visualize(void *args){
 		}
 		glEnd();
 		//Tanks
-		glColor3f(1,.5,0);
+		glColor3f(0,1,0);
 		glBegin(GL_POINTS);
 		for (int i=0; i<tank_size; i++)
 			glVertex2dv(board.tanks[i]->pos.data);
+		glEnd();
+		//Enemy tanks
+		glColor3f(1,0,0);
+		glBegin(GL_POINTS);
+		for (int i=0; i<enemy_tank_size; i++)
+			glVertex2dv(board.enemy_tanks[i]->pos.data);
 		glEnd();
 		/*
 		//Goals

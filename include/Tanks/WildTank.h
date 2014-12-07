@@ -1,3 +1,13 @@
-#include AbstractTank.h
+#ifndef WILDTANK_H
+#define WILDTANK_H
 
-class WildTank: public AbstractTank{};
+#include "Tanks/AbstractTank.h"
+
+class WildTank : public AbstractTank{
+public:
+	WildTank(int i, Board *b) : AbstractTank(i, b){}
+
+	virtual void move(double delta_t);
+};
+
+#endif

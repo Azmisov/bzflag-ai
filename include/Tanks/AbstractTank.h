@@ -1,6 +1,7 @@
 #ifndef ABSTRACT_TANK
 #define ABSTRACT_TANK
 
+#include "Eigen.h"
 #include "Vector2d.h"
 struct Board;
 
@@ -17,7 +18,7 @@ enum TankMode {
 class AbstractTank{
 protected:
 	int idx;
-	float deltaT = 1;
+	float deltaT = 0.1;
 	
 	Eigen::Matrix<float, 6, 6> F;
 	Eigen::Matrix<float, 6, 6> I;

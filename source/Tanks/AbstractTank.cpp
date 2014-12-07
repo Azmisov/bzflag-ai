@@ -1,7 +1,6 @@
 #include "Protocol.h"
 #include "Tanks/AbstractTank.h"
 #include "math.h"
-#include "Eigen.h"
 
 AbstractTank::AbstractTank(int i, Board *b){
 	idx = i;
@@ -14,21 +13,21 @@ AbstractTank::AbstractTank(int i, Board *b){
 		0, 0, 0, 0, 1, deltaT,
 		0, 0, 0, 0, 0, 1;
 	
-	sigmaX << 0.1, 0.0, 0.0, 0.0, 0.0, 0.0,
+	sigmaX << 	0.1, 0.0, 0.0, 0.0, 0.0, 0.0,
 				0.0, 0.1, 0.0, 0.0, 0.0, 0.0,
-				0.0, 0.0, 100, 0.0, 0.0, 0.0,
+				0.0, 0.0, 1, 0.0, 0.0, 0.0,
 				0.0, 0.0, 0.0, 0.1, 0.0, 0.0,
 				0.0, 0.0, 0.0, 0.0, 0.1, 0.0,
-				0.0, 0.0, 0.0, 0.0, 0.0, 100;
-				
-	sigmaT << 100, 0.0, 0.0, 0.0, 0.0, 0.0,
+				0.0, 0.0, 0.0, 0.0, 0.0, 1;
+
+	sigmaT << 	1, 0.0, 0.0, 0.0, 0.0, 0.0,
 				0.0, 0.1, 0.0, 0.0, 0.0, 0.0,
 				0.0, 0.0, 0.1, 0.0, 0.0, 0.0,
-				0.0, 0.0, 0.0, 100, 0.0, 0.0,
+				0.0, 0.0, 0.0, 1, 0.0, 0.0,
 				0.0, 0.0, 0.0, 0.0, 0.1, 0.0,
 				0.0, 0.0, 0.0, 0.0, 0.0, 0.1;
 				
-	I << 1, 0.0, 0.0, 0.0, 0.0, 0.0,
+	I << 		1, 0.0, 0.0, 0.0, 0.0, 0.0,
 				0.0, 1, 0.0, 0.0, 0.0, 0.0,
 				0.0, 0.0, 1, 0.0, 0.0, 0.0,
 				0.0, 0.0, 0.0, 1, 0.0, 0.0,
@@ -61,14 +60,11 @@ void AbstractTank::updateDynamics(double delta_t, float x, float y, float theta)
 	dir = Vector2d(cos(theta), sin(theta));
 	//Starting position
 	if (delta_t == 0){
-		pos[0] = x;
-		pos[1] = y;
-		vel = Vector2d(0);
-		acc = Vector2d(0);
+		muT[0] = x;
+		muT[3] = y;
 	}
-
-void Kalman(Eigen::Matrix<float, 2, 1> zT)
-{
+	//Do kalman stuff
+	Eigen::Vector2f zT(x, y);
 	Eigen::Matrix<float, 6, 6> L;
 	Eigen::Matrix<float, 6, 2> K;
 	L = (F * sigmaT * F.transpose()) + sigmaX;
@@ -81,4 +77,10 @@ void Kalman(Eigen::Matrix<float, 2, 1> zT)
 	
 	muT = mu;
 	sigmaT = sigma;
+	//Assign member variables
+	for (int i=0; i<2; i++){
+		pos[i] = muT[i*3];
+		vel[i] = muT[i*3+1];
+		acc[i] = muT[i*3+2];
+	}
 }
