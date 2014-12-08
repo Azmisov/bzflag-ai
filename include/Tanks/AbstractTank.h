@@ -19,6 +19,7 @@ class AbstractTank{
 protected:
 	int idx;
 	float deltaT = 0.1;
+	int itsSinceReset = 0;
 	
 	Eigen::Matrix<float, 6, 6> F;
 	Eigen::Matrix<float, 6, 6> I;
@@ -27,6 +28,7 @@ protected:
 	Eigen::Matrix<float, 2, 6> H;
 	Eigen::Matrix<float, 6, 1> muT;
 	Eigen::Matrix<float, 6, 6> sigmaT;
+	Eigen::Matrix<float, 6, 6> sigma0;
 
 public:
 	Board *board;
