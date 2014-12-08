@@ -56,12 +56,13 @@ void NewTank::move(double delta_t){\
 	if (target_tank == -1)
 		return;
 	double ang_vel = aim(board->enemy_tanks[target_tank]);
-	printf("%f\n",ang_vel);
-	if (fabs(ang_vel) < .02)
-		board->p->shoot(idx);
-	else board->p->angvel(idx, ang_vel);
+	//printf("%f\n",ang_vel);
+	//if (fabs(ang_vel) < .02)
+	//	board->p->shoot(idx);
+	//board->p->angvel(idx, ang_vel);
 }
 
+/*
 double NewTank::aim(AbstractTank *enemy){
 	no_intersect = false;
 	//If we aren't intersecting the tank's path, always go towards the tank
@@ -138,5 +139,69 @@ double NewTank::aim(AbstractTank *enemy){
 	int sign = angDiff > 0 ? 1 : -1;
 	if (toward_tank)
 		sign = -sign;
-	return sign*magnitude;
+	return sign*angDiff/M_PI;
 }
+//*/
+
+//*
+double NewTank::aim(AbstractTank *e){
+	no_intersect = true;
+	Vector2d toward_tank = e->pos-pos;
+	//If velocity is small, just aim for where tank is
+
+	//Solve for x or y, depending on which gives more stable results
+	int i = dir[0] > dir[1] ? 0 : 1, j = !i;
+	//Compute intersection between tank's direction and the tank's path
+	double m = dir[j]/dir[i],
+		ax2 = e->acc[i]*e->acc[i],
+		a_xy = e->acc.product(),
+		jj = ax2*m - a_xy;
+	//"a" term of quadratic
+	double a = 2*jj*jj;
+	//x intersection approaches infinity
+	//if aligned with tank, we should shoot
+	/*
+	if (fabs(a) < EPSILON){
+		printf("X is infinity, %f\n",a);
+		return getAngVel(toward_tank) > 0 ? 1 : -1;
+	}
+	*/
+	double bb = pos[j]-m*pos[i],	//y intercept of bullet line
+		vx2 = e->vel[i]*e->vel[i],
+		vy_ax = e->acc[i]*e->vel[j],
+		k = ax2*(bb - e->pos[j]);
+	k += vy_ax*e->vel[i];
+	k -= vx2*e->acc[j];
+	k += a_xy*e->pos[i];	
+	double l = vy_ax - e->vel[i]*e->acc[j];
+	l *= l;
+	//We get a quadratic equation, with (a/2)x^2 + (-b)x + c = 0
+	double lax = 2*l*e->acc[i],
+		b = -2*j*k + lax,
+		c = k*k - l*vx2 + lax*e->pos[i],
+		r = b*b - 2*a*c;
+	
+	//Check for imaginary solutions
+	if (fabs(r) < EPSILON) r = 0;
+	else if (r < 0){
+		printf("Imaginary, %f\n",r);
+		return getAngVel(toward_tank);
+	}
+	else r = sqrt(r);
+	Vector2d s1, s2;
+	s1[i] = (b + r)/a;
+	s2[i] = (b - r)/a;
+	//Pick the solution that is closest to happening
+	s1[j] = m*s1[i] + bb;
+	s2[j] = m*s2[i] + bb;
+	//Set intercept
+	no_intersect = false;
+	path[0] = m;
+	path[1] = bb;
+	enemy_pos = s1;
+	bullet_pos = s2;
+	
+	//Find which way we should rotate
+	return getAngVel(toward_tank);
+}
+//*/
