@@ -6,13 +6,6 @@ AbstractTank::AbstractTank(int i, Board *b){
 	idx = i;
 	board = b;
 	
-	F << 1, deltaT, deltaT * deltaT/2, 0, 0, 0,
-		0, 1, deltaT, 0, 0, 0,
-		0, 0, 1, 0, 0, 0,
-		0, 0, 0, 1, deltaT, deltaT * deltaT/2,
-		0, 0, 0, 0, 1, deltaT,
-		0, 0, 0, 0, 0, 1;
-	
 	sigmaX << 	0.1, 0.0, 0.0, 0.0, 0.0, 0.0,
 				0.0, 0.1, 0.0, 0.0, 0.0, 0.0,
 				0.0, 0.0, 1, 0.0, 0.0, 0.0,
@@ -53,7 +46,11 @@ double AbstractTank::getAngVel(double theta){
 		angDiff += 2*M_PI;
 	while (angDiff > M_PI)
 		angDiff -= 2*M_PI;
-	return -angDiff/M_PI;
+	angDiff *= 4*M_1_PI;
+	if (angDiff > 1) angDiff = 1;
+	int sign = angDiff > 0 ? -1 : 1;
+	const double squash = 3.3;
+	return sign/(1+exp(-squash*2*fabs(angDiff)+squash)) - .03;
 }
 void AbstractTank::updateDynamics(double delta_t, float x, float y, float theta){
 	//Set direction
@@ -64,6 +61,12 @@ void AbstractTank::updateDynamics(double delta_t, float x, float y, float theta)
 		muT[3] = y;
 	}
 	//Do kalman stuff
+	F << 1, delta_t, delta_t * delta_t/2, 0, 0, 0,
+		0, 1, deltaT, 0, 0, 0,
+		0, 0, 1, 0, 0, 0,
+		0, 0, 0, 1, delta_t, delta_t * delta_t/2,
+		0, 0, 0, 0, 1, delta_t,
+		0, 0, 0, 0, 0, 1;
 	Eigen::Vector2f zT(x, y);
 	Eigen::Matrix<float, 6, 6> L;
 	Eigen::Matrix<float, 6, 2> K;

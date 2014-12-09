@@ -31,10 +31,10 @@ TODO LIST
 	
 	
 
-- compile
+x compile
 - kalman filter
 - clay pigeon
-- nonconforming
+x nonconforming
 - regular tank
 	- targeting and shooting
 	- integrate with potential field lab

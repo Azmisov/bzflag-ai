@@ -7,10 +7,8 @@ class NewTank : public AbstractTank{
 private:
 public:
 	int target_tank = -1;
+	Vector2d tank_pos;
 	Vector2d bullet_pos;
-	Vector2d enemy_pos;
-	Vector2d path;
-	double Ej, Ek, El;
 	bool no_intersect = true;
 	
 	NewTank(int i, Board *b) : AbstractTank(i, b){}

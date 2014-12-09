@@ -14,8 +14,8 @@ void ClayPigeon::coordinate(double delta_t){
 			//t->target_dir = ra*M_PI;
 			//Random speed
 			double rs = rand()/(double) RAND_MAX;
-			t->board->p->speed(i, .2); //rs
-			t->board->p->angvel(i, .3);
+			t->board->p->speed(i, .08); //rs
+			//t->board->p->angvel(i, .3);
 		}
 	}
 }

@@ -24,6 +24,7 @@ TODO:
 #include "Protocol.h"
 #include "Grid.h"
 #include "Tanks/NewTank.h"
+#include "Tanks/ClayPigeon.h"
 
 #define SCREENCAST_DIR "screencast/"
 #define DO_SCREENCAST 0
@@ -193,9 +194,8 @@ void *visualize(void *args){
 				glVertex2dv((*board.obstacles[i])[p].data);
 		}
 		glEnd();
-
+//*
 		NewTank *t = dynamic_cast<NewTank*>(board.tanks[0]);
-		AbstractTank *e = board.enemy_tanks[t->target_tank];
 		//Enemy tanks
 		glColor3f(1,0,0);
 		glBegin(GL_POINTS);
@@ -216,67 +216,36 @@ void *visualize(void *args){
 		glEnd();
 		
 		//Aiming vis
-		//*
-		glBegin(GL_LINE_STRIP);
-			//Tank we're targeting
-			if (t->no_intersect)
-				glColor3f(1, 1, 1);
-			else glColor3f(1, 0.5, 0);
-			//Visualize motion
-			
-			for (int i=-50; i<50; i++){
-				double t = i*1;
-				Vector2d p = e->pos + t*e->vel + .5*t*t*e->acc;
-				glVertex2dv(p.data);
-			}
-		glEnd();
-		glBegin(GL_LINE_STRIP);
-			//Tank we're targeting
-			glColor3f(1, 1, 0);
-			//Visualize motion
-			//*e = board.enemy_tanks[t->target_tank];
-			double ax2 = e->acc[0]*e->acc[0],
-				axy = e->acc.product(),
-				vx2 = e->vel[0]*e->vel[0];
-			double c = ax2*e->pos[1] - e->vel.product()*e->acc[0] + e->acc[1]*vx2 - axy*e->pos[0];
-			double l = e->acc[0]*e->vel[1] - e->vel[0]*e->acc[1];
-			for (int i=-20; i<20; i++){
-				double v = i*10;
-				double r = vx2 - 2*e->acc[0]*(e->pos[0]-v);
-				if (r > 0){
-					r = l*sqrt(r);
-					double y_v = c + v*axy;
-					glVertex2d(v, (y_v+r)/ax2);
-					glVertex2d(v, (y_v-r)/ax2);
+		if (t->target_tank != -1){
+			AbstractTank *e = board.enemy_tanks[t->target_tank];
+			glBegin(GL_LINE_STRIP);
+				//Tank we're targeting
+				if (t->no_intersect)
+					glColor3f(1, 1, 1);
+				else glColor3f(1, 0.5, 0);
+				//Visualize motion
+				for (int i=-50; i<50; i++){
+					double t = i*1;
+					Vector2d p = e->pos + t*e->vel + .5*t*t*e->acc;
+					glVertex2dv(p.data);
 				}
-			}
-		glEnd();
-		glColor3f(0,1,1);
-		glBegin(GL_LINES);
-			AbstractTank *s = board.tanks[0];
-			glVertex2dv(s->pos.data);
-			glVertex2dv((s->pos+1000*s->dir).data);
-		glEnd();
-		glColor3f(.2,.2,1);
-		glBegin(GL_LINE_STRIP);
-			for (int i=-10; i<10; i++){
-				double v = i*20,
-					j = t->path[0]*v+t->path[1];
-				if (t->dir[0] > t->dir[1])
-					glVertex2d(v, j);
-				else
-					glVertex2d(j, v);
-			}
-		glEnd();
-		glBegin(GL_POINTS);
-			//Predicted location
-			if (!t->no_intersect){
-				glColor3f(1, 1, 0);
-				glVertex2dv(t->enemy_pos.data);
-				glColor3f(1, 0, 1);
-				glVertex2dv(t->bullet_pos.data);
-			}
-		glEnd();
+			glEnd();
+			glColor3f(0,1,1);
+			glBegin(GL_LINES);
+				AbstractTank *s = board.tanks[0];
+				glVertex2dv(s->pos.data);
+				glVertex2dv((s->pos+1000*s->dir).data);
+			glEnd();
+			glBegin(GL_POINTS);
+				//Predicted location
+				if (!t->no_intersect){
+					glColor3f(1, 1, 0);
+					glVertex2d(t->tank_pos[0], t->tank_pos[1]);
+					glColor3f(1, 0, 1);
+					glVertex2d(t->bullet_pos[0], t->bullet_pos[1]);
+				}
+			glEnd();
+		}
 		//*/
 		
 		/*
