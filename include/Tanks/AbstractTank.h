@@ -20,7 +20,8 @@ protected:
 	int idx;
 	float deltaT = 0.1;
 	int itsSinceReset = 0;
-	
+
+public:	
 	Eigen::Matrix<float, 6, 6> F;
 	Eigen::Matrix<float, 6, 6> I;
 	Eigen::Matrix<float, 6, 6> sigmaX;
@@ -29,8 +30,7 @@ protected:
 	Eigen::Matrix<float, 6, 1> muT;
 	Eigen::Matrix<float, 6, 6> sigmaT;
 	Eigen::Matrix<float, 6, 6> sigma0;
-
-public:
+	
 	Board *board;
 	//Stategy variables
 	TankMode mode;

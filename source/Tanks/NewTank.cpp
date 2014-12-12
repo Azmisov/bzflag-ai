@@ -24,43 +24,39 @@ void NewTank::coordinate(double delta_t){
 		}
 	}
 }
-void NewTank::move(double delta_t){\
-	/*
-	double pi = 3.1415926435;
-	Vector2d result = Vector2d(0);
-	
-	for (int i=0; i < board->obstacles.size(); i++){
-		result += 0.4*board->obstacles[i]->potentialField(loc,dir);
-	}
 
-	result -= 60*board->goals[board->goals.size()-1]->potentialField(loc,dir);	
-	
-	double desiredAngle = atan2(result[1], result[0]);
-	double desiredMagnitude = result.length();
-	double currentAngle = atan2(dir[1], dir[0]);
-	
-	Tank::protocol.speed(idx, 1);
-	
-	double angDiff = currentAngle - desiredAngle;
-	while (angDiff < -1 * pi){
-		angDiff += (2*pi);
+void NewTank::move(double delta_t){
+	Vector2d result = Vector2d(0);
+	/*
+	//Get best tank direction
+	int obs_count = 0;
+	for (int i=0; i < board->obstacles.size(); i++){
+		//Only use this obstacle if it obstructs path to goal
+		result += 0.4*board->obstacles[i]->potentialField(loc,dir);
+		obs_count++;
 	}
-	while (angDiff > pi){
-		angDiff -= (2*pi);
-	}
-	
-	Tank::protocol.angvel(idx, -angDiff/pi);
+	//Attacking a tank
+	if (!obs_cont && ){
 	*/
-	
-	if (target_tank == -1)
-		return;
-	double ang_vel = aim(board->enemy_tanks[target_tank]);
-	//printf("%f\n",ang_vel);
-	if (ang_vel == INFINITY) return;
-	if (fabs(ang_vel) < .02){
-		board->p->shoot(idx);
+		if (target_tank == -1)
+			return;
+		double ang_vel = aim(board->enemy_tanks[target_tank]);
+		if (fabs(ang_vel) < .02)
+			board->p->shoot(idx);
+		board->p->angvel(idx, ang_vel);
+		//Speed proportional to angular speed
+		board->p->speed(idx, fabs(ang_vel));
+	/*
 	}
-	board->p->angvel(idx, ang_vel);
+	//Navigating
+	else{
+		result -= 60*board->goals[board->goals.size()-1]->potentialField(loc,dir);
+		double ang_vel = getAngVel(result);
+		board->p->angvel(idx, ang_vel);
+		//Speed inversely proportional to angular speed
+		board->p->speed(idx, 1-ang_vel);
+	}
+	*/
 }
 
 double NewTank::aim(AbstractTank *e){
@@ -98,7 +94,7 @@ double NewTank::aim(AbstractTank *e){
 	//Check for imaginary solutions
 	if (fabs(r) < 1e-3) r = 0;
 	else if (r < 0)
-		return base_vel;
+		return base_vel*2;
 	else r = sqrt(r);
 	Vector2d isect[2];
 	//Switch to log space, if b+r is very small or a is very large

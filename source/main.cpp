@@ -25,6 +25,7 @@ TODO:
 #include "Protocol.h"
 #include "Grid.h"
 #include "Tanks/NewTank.h"
+#include "Tanks/WildTank.h"
 #include "Tanks/ClayPigeon.h"
 
 #define SCREENCAST_DIR "screencast/"
@@ -42,20 +43,25 @@ void *visualize(void *args);
 void save_buffer(int time);
 void exit_program();
 
-
-
+/*
 void graphKalman(int idx){
-    //Generate gnu-plot data for the field
-    Vector2d min = Vector2d(-400), max = Vector2d(400);
-    double spacing = 20;
-    char buffer[33];
-    //string file_name = "kalman_" + itoa(idx,buffer,10) + ".gpi";
-    FILE *f = fopen("kalman.gpi", "w+");
-    //Initialize graph
-    fprintf(f, "set xrange [-400: 400]\n", -400, 400);
-    fprintf(f, "set yrange [-400: 400]\n", -400, 400);
-    fprintf(f, "set pm3d\nset view map\nunset key\nset size square\n\n");
+    //Generate gnu-plot data for kalman matrix
+    AbstractTank *tank = board.enemy_tanks[0];
     
+    char buffer[33];
+    sprintf(buffer, "matrices/%d.dat", idx);
+    FILE *f = fopen(buffer, "w+");
+    for (int i=0; i<6; i++){
+		for (int j=0; j<6; j++){
+			fprintf(f, "%d ", tank->sigmaT(i, j));
+		}
+		fprintf(f, "\n");
+	}
+	/*
+    //Initialize graph
+    fprintf(f, "set xrange [%d: %d]\n", -400, 400);
+    fprintf(f, "set yrange [%d: %d]\n", -400, 400);
+    fprintf(f, "set pm3d\nset view map\nunset key\nset size square\n\n");
     //Draw fields
     fprintf(f, "set palette model RGB functions 1-gray, 1-gray, 1-gray\nset isosamples 100\n\n");
     fprintf(f, "sigma_x = %f\n", board.enemy_tanks[0]->sigmaT(0,0));
@@ -63,13 +69,12 @@ void graphKalman(int idx){
     fprintf(f, "mu_x = %f\n", board.enemy_tanks[0]->muT(0));
     fprintf(f, "mu_y = %f\n", board.enemy_tanks[0]->muT(3));
     fprintf(f, "rho = 0.0\n");
-    
     fprintf(f, "splot 1.0/(2.0 * pi * sigma_x * sigma_y * sqrt(1 - rho**2)) \\\n\t* exp(-1.0/(2.0 * (1 - rho)**2) * ((x-mu_x)**2 / sigma_x**2 + (y-mu_y)**2 / sigma_y**2 \\\n\t- 2.0*rho*(x-mu_x)*(y-mu_y)/(sigma_x*sigma_y))) with pm3d");
-    
+    */
     //Close plot file
-    fclose(f);
-    
-}
+   // fclose(f);
+//}
+//*/
 
 int main(int argc, char** argv){
     srand(time(NULL));
@@ -98,7 +103,7 @@ int main(int argc, char** argv){
     board.gc.grabownflag = true;
     board.gc.usegrid = false;
     board.gc.gridwidth = 200;
-    if (!p->initialBoard<NewTank>(board)){
+    if (!p->initialBoard<WildTank>(board)){
         cout << "Failed to initialize board!" << endl;
         exit(1);
     }
@@ -107,23 +112,25 @@ int main(int argc, char** argv){
         p->updateBoard(0, board);
         
         //Start visualization thread
-        pthread_t viz_thread;
-        pthread_create(&viz_thread, NULL, visualize, NULL);
-
+        //pthread_t viz_thread;
+        //pthread_create(&viz_thread, NULL, visualize, NULL);
+        time_t old_time = time(NULL), new_time;
+        
         int idx = 0;
         while (!SHOULD_CLOSE){
             if (idx % 50)
                 p->updateGrid(board);
-            double time = glfwGetTime();
-            glfwSetTime(0);
+            new_time = time(NULL);
+            double time = difftime(new_time, old_time);
+            old_time = new_time;
             p->updateBoard(time, board);
             board.tanks[0]->coordinate(time);
             for (int i=0; i < board.tanks.size(); i++)
                 board.tanks[i]->move(time);
             usleep(1000*100);
             
-            if (idx % 10)
-                graphKalman(idx);
+            //if (idx % 10)
+            //    graphKalman(idx);
             
             idx++;
         }
@@ -174,6 +181,8 @@ void graphFields(){
     //Close plot file
     fclose(f);
 }
+
+/*
 
 //Print all errors to console
 static void error_callback(int error, const char* description){
@@ -291,7 +300,7 @@ void *visualize(void *args){
                 glVertex2dv(board.tanks[i]->goals[j]->loc.data);
         }
         glEnd();
-        */
+        /
         glfwSwapBuffers(window);
         usleep(10000);
         if (DO_SCREENCAST && frame++ % 400 == 0)
@@ -327,3 +336,4 @@ void save_buffer(int time){
     FreeImage_Save(FIF_PNG, img, fname, 0);
     FreeImage_Unload(img);
 }
+*/
