@@ -255,7 +255,7 @@ bool Protocol::updateBoard(double delta_t, Board &board){
 				atof(v.at(11).c_str())
 			);
 			(*tank_iter)->vel_angular = atof(v.at(12).c_str());
-			*/
+			//*/
 			//MyTank.shots_avail=atoi(v.at(4).c_str());
 			//MyTank.time_to_reload=atof(v.at(5).c_str());
 			//MyTank.flag=v.at(6);

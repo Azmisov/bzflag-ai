@@ -1,8 +1,8 @@
 SOURCE_DIR := source
 HEADER_DIR := include
 OBJECT_DIR := build
-#LIBS := include/glfw3/libglfw3.a include/freeimage/libfreeimage.a -lGL -lX11 -lXxf86vm -lm -lpthread -lXrandr -lXi
-LIBS := -lm -lpthread
+LIBS := include/glfw3/libglfw3.a include/freeimage/libfreeimage.a -lGL -lX11 -lXxf86vm -lm -lpthread -lXrandr -lXi
+#LIBS := -lm -lpthread
 
 CC := g++
 CFLAGS := -std=c++11 -I$(HEADER_DIR)

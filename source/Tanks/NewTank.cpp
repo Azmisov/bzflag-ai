@@ -10,11 +10,16 @@ void NewTank::coordinate(double delta_t){
 		NewTank *t = dynamic_cast<NewTank*>(board->tanks[i]);
 		if (t->target_tank == -1 || board->enemy_tanks[t->target_tank]->mode == DEAD){
 			if (found == -1){
+				double best_distance = INFINITY;
 				for (int j=0; j<board->enemy_tanks.size(); j++){
 					//Pick first tank that is not dead
 					if (board->enemy_tanks[j]->mode != DEAD){
-						found = j;
-						break;
+						double dist = (t->pos - board->enemy_tanks[j]->pos).length_squared();
+						if (dist < best_distance){
+							best_distance = dist;
+							found = j;
+						}
+						//break;
 					}
 				}
 			}
@@ -41,11 +46,12 @@ void NewTank::move(double delta_t){
 		if (target_tank == -1)
 			return;
 		double ang_vel = aim(board->enemy_tanks[target_tank]);
-		if (fabs(ang_vel) < .02)
+		if (fabs(ang_vel) < .02){
 			board->p->shoot(idx);
+		}
 		board->p->angvel(idx, ang_vel);
 		//Speed proportional to angular speed
-		board->p->speed(idx, fabs(ang_vel));
+		board->p->speed(idx, .3); //fabs(ang_vel)
 	/*
 	}
 	//Navigating
@@ -61,12 +67,28 @@ void NewTank::move(double delta_t){
 
 double NewTank::aim(AbstractTank *e){
 	no_intersect = true;
-	Vector2d toward_tank = e->pos-pos;
-	double base_vel = getAngVel(toward_tank);
-	int base_sgn = base_vel > 0 ? 1 : -1;
+	
 	//If tank is not moving, just aim directly at it
 	if (e->vel.length() < .5)
-		return base_vel;
+		return getAngVel(e->pos - pos);
+
+
+	no_intersect = false;
+	
+	//Estimate the tank's future position, as a fallback
+	//Extract component speed of bullet and use that to get time value for integration
+	Vector2d towards_tank = e->pos - pos;
+	towards_tank.normalize();
+	int bidx = fabs(towards_tank[0]) > fabs(towards_tank[1]) ? 0 : 1;
+	double bullet_speed = vel.length() + board->gc.shotspeed;
+	double future_t = fabs((e->pos[bidx] - pos[bidx])/(towards_tank[bidx]*bullet_speed));
+	Vector2d future_pos = e->pos + future_t*e->vel + 0.5*future_t*future_t*e->acc;
+	double base_vel = getAngVel(future_pos - pos);
+	int base_sgn = base_vel > 0 ? 1 : -1;
+
+	tank_pos = future_pos;
+	bullet_pos = e->pos;
+	
 	//Solve for x or y, depending on which gives more stable results
 	int i = dir[0] > dir[1] ? 0 : 1, j = !i;
 	double ax = e->acc[i], ay = e->acc[j];
@@ -144,33 +166,33 @@ double NewTank::aim(AbstractTank *e){
 			}
 		}
 	}
+	//Sensitivity factor
+	Vector2d tank_dir = e->pos - isect[best_isect];
+	double theta = fabs(acos(tank_dir.dot(-dir)/tank_dir.length()));
+	base_sgn = tank_dir.dot(Vector2d(-dir[1],dir[0])) > 0 ? -1 : 1;
+	
 	double error;
 	Vector2d bullet_dir = isect[best_isect]-pos;
-	if (bullet_dir.dot(dir) < 0)
-		error = 2.5;
-	else if (tank_t < 0)
-		error = .2;
+	if (bullet_dir.dot(dir) < 0 || tank_t < 0)
+		return base_vel*3;
 	else{
-		//Calculate time for bullet to reach isect
-		Vector2d offset = (dir*(vel.length() + board->gc.shotspeed)*tank_t);		
+		//Calculate new position for bullet
+		Vector2d offset = (dir*bullet_speed*tank_t);		
 		double tdist = bullet_dir.length(),
 			bdist = offset.length();
 		error = tdist - bdist;
 		//Undershoot, need to go away from tank
-		if (error > 0)
+		if (error < 0)
 			base_sgn = -base_sgn;
 		//Get magnitude of turn angle
 		error = fabs(error) - board->gc.tankradius - board->gc.shotradius;
 		if (error < 0) error = 0;
-		error = error/450.0;
+		error = error/250.0;
 		if (error > 1) error = 1;
 		
-		//bullet_pos = offset + pos; 
-		//tank_pos = isect[best_isect];
+		bullet_pos = offset + pos; 
+		tank_pos = isect[best_isect];
 	}
-	//Sensitivity factor
-	Vector2d tank_dir = e->pos - isect[best_isect];
-	double theta = fabs(acos(tank_dir.dot(-dir)/tank_dir.length()));
 	if (theta > M_PI_2) theta = M_PI-theta;
 	error *= theta*M_2_PI;
 	//Best angvel

@@ -35,7 +35,7 @@ public:
 	//Stategy variables
 	TankMode mode;
 	//Dynamics
-	Vector2d pos, vel, acc, dir;
+	Vector2d pos, vel, acc, dir, raw_pos;
 	
 	AbstractTank(int i, Board *b);
 	virtual ~AbstractTank();

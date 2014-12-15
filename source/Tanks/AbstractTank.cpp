@@ -5,13 +5,16 @@
 AbstractTank::AbstractTank(int i, Board *b){
 	idx = i;
 	board = b;
-	
-	sigmaX << 	.1, 0.0, 0.0, 0.0, 0.0, 0.0,
-				0.0, .05, 0.0, 0.0, 0.0, 0.0,
-				0.0, 0.0, .001, 0.0, 0.0, 0.0,
-				0.0, 0.0, 0.0, .1, 0.0, 0.0,
-				0.0, 0.0, 0.0, 0.0, .05, 0.0,
-				0.0, 0.0, 0.0, 0.0, 0.0, .001;
+	const double
+		P = .001,
+		V = .01,
+		A = .5;
+	sigmaX << 	P, 0.0, 0.0, 0.0, 0.0, 0.0,
+				0.0, V, 0.0, 0.0, 0.0, 0.0,
+				0.0, 0.0, A, 0.0, 0.0, 0.0,
+				0.0, 0.0, 0.0, P, 0.0, 0.0,
+				0.0, 0.0, 0.0, 0.0, V, 0.0,
+				0.0, 0.0, 0.0, 0.0, 0.0, A;
 
 	I << 		1, 0.0, 0.0, 0.0, 0.0, 0.0,
 				0.0, 1, 0.0, 0.0, 0.0, 0.0,
@@ -20,7 +23,12 @@ AbstractTank::AbstractTank(int i, Board *b){
 				0.0, 0.0, 0.0, 0.0, 1, 0.0,
 				0.0, 0.0, 0.0, 0.0, 0.0, 1;
 
-	sigmaT << 	I;
+	sigmaT << 	15, 0.0, 0.0, 0.0, 0.0, 0.0,
+				0.0, 10, 0.0, 0.0, 0.0, 0.0,
+				0.0, 0.0, .05, 0.0, 0.0, 0.0,
+				0.0, 0.0, 0.0, 15, 0.0, 0.0,
+				0.0, 0.0, 0.0, 0.0, 10, 0.0,
+				0.0, 0.0, 0.0, 0.0, 0.0, .05;
 				
 	sigma0 << 	sigmaT;
 				
@@ -57,6 +65,8 @@ void AbstractTank::updateDynamics(double delta_t, float x, float y, float theta)
 		muT[0] = x;
 		muT[3] = y;
 	}
+	Vector2d est = pos+vel*delta_t + delta_t*delta_t/2*acc;
+	raw_pos.setData(x, y);
 	//Do kalman stuff
 	F << 1, delta_t, delta_t * delta_t/2, 0, 0, 0,
 		0, 1, deltaT, 0, 0, 0,
@@ -83,13 +93,20 @@ void AbstractTank::updateDynamics(double delta_t, float x, float y, float theta)
 		vel[i] = muT[i*3+1];
 		acc[i] = muT[i*3+2];
 	}
-	/*
-	if (itsSinceReset > 25)
-	{
+	//*
+	if (itsSinceReset > 300){
 		sigmaT = sigma0 * I;
 		itsSinceReset = -1;
 	}
-	*/
+	//*/
 	//std::cout << sigmaT << std::endl;
 	itsSinceReset++;
+	/*
+	if (itsSinceReset % 5 == 0 && pos[1] > -280)
+		printf("(%d,%d)  (%d,%d)  (%d,%d)  (%f,%f)\n",
+			(int)round(est[0]), (int)round(est[1]),
+			(int)round(x), (int)round(y),
+			(int)round(pos[0]), (int)round(pos[1]),
+			sigmaT(0,0), sigmaT(3,3));
+	*/
 }

@@ -29,7 +29,7 @@ TODO:
 #include "Tanks/ClayPigeon.h"
 
 #define SCREENCAST_DIR "screencast/"
-#define DO_SCREENCAST 0
+#define DO_SCREENCAST 1
 
 using namespace std;
 
@@ -43,17 +43,18 @@ void *visualize(void *args);
 void save_buffer(int time);
 void exit_program();
 
-/*
+
 void graphKalman(int idx){
+	//printf("Writing!!!\n");
     //Generate gnu-plot data for kalman matrix
     AbstractTank *tank = board.enemy_tanks[0];
     
     char buffer[33];
     sprintf(buffer, "matrices/%d.dat", idx);
     FILE *f = fopen(buffer, "w+");
-    for (int i=0; i<6; i++){
+    for (int i=5; i>=0; i--){
 		for (int j=0; j<6; j++){
-			fprintf(f, "%d ", tank->sigmaT(i, j));
+			fprintf(f, "%f ", tank->sigmaT(i, j));
 		}
 		fprintf(f, "\n");
 	}
@@ -72,9 +73,8 @@ void graphKalman(int idx){
     fprintf(f, "splot 1.0/(2.0 * pi * sigma_x * sigma_y * sqrt(1 - rho**2)) \\\n\t* exp(-1.0/(2.0 * (1 - rho)**2) * ((x-mu_x)**2 / sigma_x**2 + (y-mu_y)**2 / sigma_y**2 \\\n\t- 2.0*rho*(x-mu_x)*(y-mu_y)/(sigma_x*sigma_y))) with pm3d");
     */
     //Close plot file
-   // fclose(f);
-//}
-//*/
+	fclose(f);
+}
 
 int main(int argc, char** argv){
     srand(time(NULL));
@@ -103,34 +103,32 @@ int main(int argc, char** argv){
     board.gc.grabownflag = true;
     board.gc.usegrid = false;
     board.gc.gridwidth = 200;
-    if (!p->initialBoard<WildTank>(board)){
+    if (!p->initialBoard<NewTank>(board)){
         cout << "Failed to initialize board!" << endl;
         exit(1);
     }
     if (board.tanks.size()){
-        WIN_SIZE = (int) board.gc.worldsize;
+        WIN_SIZE = (int) board.gc.worldsize*.9;
         p->updateBoard(0, board);
         
         //Start visualization thread
-        //pthread_t viz_thread;
-        //pthread_create(&viz_thread, NULL, visualize, NULL);
-        time_t old_time = time(NULL), new_time;
+        pthread_t viz_thread;
+        pthread_create(&viz_thread, NULL, visualize, NULL);
         
         int idx = 0;
         while (!SHOULD_CLOSE){
-            if (idx % 50)
+            if (idx % 50 == 0)
                 p->updateGrid(board);
-            new_time = time(NULL);
-            double time = difftime(new_time, old_time);
-            old_time = new_time;
+            double time = glfwGetTime();
+            glfwSetTime(0);
             p->updateBoard(time, board);
             board.tanks[0]->coordinate(time);
             for (int i=0; i < board.tanks.size(); i++)
                 board.tanks[i]->move(time);
             usleep(1000*100);
             
-            //if (idx % 10)
-            //    graphKalman(idx);
+            if (idx % 5 == 0)
+                graphKalman(idx);
             
             idx++;
         }
@@ -182,7 +180,7 @@ void graphFields(){
     fclose(f);
 }
 
-/*
+//*
 
 //Print all errors to console
 static void error_callback(int error, const char* description){
@@ -213,8 +211,8 @@ void *visualize(void *args){
     glViewport(0, 0, WIN_SIZE, WIN_SIZE);
     float div_2 = WIN_SIZE/2.0;
     glOrtho(-div_2, div_2, -div_2, div_2, 0, 1);
-    glPointSize(4);
-    //glEnable(GL_POINT_SMOOTH);
+    glPointSize(7);
+    glEnable(GL_POINT_SMOOTH);
     
     //Drawing & event loop
     //Create directory to save buffers in
@@ -245,7 +243,7 @@ void *visualize(void *args){
         for (int i=0; i<enemy_tank_size; i++){
             if (board.enemy_tanks[i]->mode != DEAD){
                 if (t->target_tank == i)
-                    glColor3f(1, 1, 1);
+                    glColor3f(.2, 1, .2);
                 else glColor3f(1, 0, 0);
                 glVertex2dv(board.enemy_tanks[i]->pos.data);
             }
@@ -263,22 +261,24 @@ void *visualize(void *args){
             AbstractTank *e = board.enemy_tanks[t->target_tank];
             glBegin(GL_LINE_STRIP);
                 //Tank we're targeting
-                if (t->no_intersect)
-                    glColor3f(1, 1, 1);
-                else glColor3f(1, 0.5, 0);
+               // if (t->no_intersect)
+                //    glColor3f(1, 1, 1);
                 //Visualize motion
+                glColor3f(0, .2, 0);
                 for (int i=-50; i<50; i++){
                     double t = i*1;
                     Vector2d p = e->pos + t*e->vel + .5*t*t*e->acc;
                     glVertex2dv(p.data);
                 }
             glEnd();
+            //*
             glColor3f(0,1,1);
             glBegin(GL_LINES);
                 AbstractTank *s = board.tanks[0];
                 glVertex2dv(s->pos.data);
                 glVertex2dv((s->pos+1000*s->dir).data);
             glEnd();
+            //*/
             glBegin(GL_POINTS);
                 //Predicted location
                 if (!t->no_intersect){
@@ -287,6 +287,8 @@ void *visualize(void *args){
                     glColor3f(1, 0, 1);
                     glVertex2d(t->bullet_pos[0], t->bullet_pos[1]);
                 }
+                glColor3f(1,0,0);
+                glVertex2dv(e->raw_pos.data);
             glEnd();
         }
         //*/
@@ -300,10 +302,10 @@ void *visualize(void *args){
                 glVertex2dv(board.tanks[i]->goals[j]->loc.data);
         }
         glEnd();
-        /
+        */
         glfwSwapBuffers(window);
         usleep(10000);
-        if (DO_SCREENCAST && frame++ % 400 == 0)
+        if (DO_SCREENCAST && frame++ % 100 == 0)
             save_buffer(frame_num++);
         glfwPollEvents();
     }
@@ -324,7 +326,7 @@ void save_buffer(int time){
     
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
     sprintf(fname, "%st_%04d.png", SCREENCAST_DIR, time);
-    printf("%s\n", fname);
+    //printf("%s\n", fname);
     
     //Copy the image to buffer
     glReadBuffer(GL_BACK_LEFT);
@@ -336,4 +338,4 @@ void save_buffer(int time){
     FreeImage_Save(FIF_PNG, img, fname, 0);
     FreeImage_Unload(img);
 }
-*/
+//*/
