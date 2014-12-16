@@ -21,6 +21,7 @@ void NewTank::coordinate(double delta_t){
 	}
 	//Count our tanks
 	char jobs[3] = {0,0,0};
+	NewTank *x;
 	for (int i=0; i<board->tanks.size(); i++){
 		switch(board->tanks[i]->mode){
 			case SPY_FETCH:
@@ -28,7 +29,8 @@ void NewTank::coordinate(double delta_t){
 				jobs[0]++;
 				break;
 			case OFFENSE:
-				jobs[1]++;
+				x = dynamic_cast<NewTank*>(board->tanks[i]);
+				jobs[1 + x->defending]++;
 				break;
 			case DEFENSE:
 				jobs[2]++;
@@ -100,6 +102,11 @@ void NewTank::coordinate(double delta_t){
 				if (t->defending && !has_enemy){
 					t->defending = false;
 					t->target_flag = -1;
+				}
+				if (jobs[0] < board->enemy_flags.size() || (t->defending && jobs[2] > jobs[1])){
+					t->target_flag = -1;
+					t->mode = IDLE;
+					goto REASSIGN;
 				}
 				//Assign a flag to attack
 				if (t->target_flag == -1){
@@ -178,6 +185,7 @@ void NewTank::coordinate(double delta_t){
 					}
 					else{
 						jobs[1]++;
+						t->defending = false;
 						t->mode = OFFENSE;
 					}
 				}
