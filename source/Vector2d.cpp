@@ -35,6 +35,9 @@ void Vector2d::normalize(){
 const double Vector2d::dot(const Vector2d &v) const{
 	return v.data[0]*data[0] + v.data[1]*data[1];
 }
+const double Vector2d::cross(const Vector2d &v) const{
+	return data[0]*v.data[1] - data[1]*v.data[0];
+}
 const double Vector2d::sum() const{
 	return data[0] + data[1];
 }
@@ -120,7 +123,7 @@ Vector2d& Vector2d::operator/=(const Vector2d& v){
 	data[1] /= v.data[1];
 	return *this;
 }
-//Vector * Vector (dot product)
+//Vector * Vector (piecewise product)
 const Vector2d Vector2d::operator*(const Vector2d& v) const{
 	return Vector2d(*this) *= v;
 }

@@ -3,6 +3,7 @@
 #include "math.h"
 
 AbstractTank::AbstractTank(int i, Board *b){
+	mode = DEAD;
 	idx = i;
 	board = b;
 	const double

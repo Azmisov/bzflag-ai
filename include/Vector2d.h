@@ -20,6 +20,7 @@ public:
 	
 	void normalize();
 	const double dot(const Vector2d &v) const;
+	const double cross(const Vector2d &v) const;
 	const double sum() const;
 	const double product() const;
 	const double length() const;
@@ -50,10 +51,10 @@ public:
 	//Vector / Vector (piecewise division)
 	const Vector2d operator/(const Vector2d& v) const;
 	Vector2d& operator/=(const Vector2d& v);
-	//Vector * Vector (dot product)
+	//Vector * Vector (piecewise product)
 	const Vector2d operator*(const Vector2d& v) const;
 	Vector2d& operator*=(const Vector2d& v);
-	//Vector ^ Vector (cross product)
+	//Vector ^ Vector (cross product ???)
 	const Vector2d operator^(const Vector2d& v) const;
 	Vector2d& operator^=(const Vector2d& v);
 	//Vector + Vector

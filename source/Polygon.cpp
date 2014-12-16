@@ -41,17 +41,69 @@ bool Polygon::contains(double x, double y) const{
 	}
 	return result;
 }
+bool Polygon::isect(Vector2d l1, Vector2d l2) const{
+    //What a mess: http://stackoverflow.com/questions/563198
+    //Loop through every edge and check for an intersection
+    Vector2d ldiff = l2 - l1;
+    int len = vertices.size();
+	Vector2d vi = vertices[len-1], vj;
+	for (int i=0; i<len; i++){
+		vj = vi;
+		vi = vertices[i];
+		
+		Vector2d s1 = l2-l1, s2 = vj-vi, s3 = l1-vi;
+		float s, t;
+		double cross = 1/s1.cross(s2);
+		s = s1.cross(s3) * cross;
+		t = s2.cross(s3) * cross;
+		if (s >= 0 && s <= 1 && t >= 0 && t <= 1)
+			return 1;
+		
+		/*
+		Vector2d s32 = vj - vi;
+		double denom = ldiff.cross(s32);
+		if (fabs(denom) < EPSILON)
+			continue;
+		bool denomPositive = fabs(denom) > EPSILON;
+		Vector2d s02 = l1 - vi;
+		double s_numer = ldiff.cross(s02);
+		if ((fabs(s_numer) < EPSILON) == denomPositive)
+			continue;
+		double t_numer = s32.cross(s02);
+		if ((fabs(t_numer) < EPSILON) == denomPositive)
+			continue;
+		if (((s_numer > denom) == denomPositive) || ((t_numer > denom) == denomPositive))
+			continue;
+		return 1;
+		*/
+	}
+	return 0;
+}
+char get_line_intersection(float p0_x, float p0_y, float p1_x, float p1_y, 
+    float p2_x, float p2_y, float p3_x, float p3_y, float *i_x, float *i_y)
+{
+    
+
+    return 0; // No collision
+}
 double Polygon::area(){
 	if (area_cache != -1)
 		return area_cache;
 	//Source: http://www.mathopenref.com/coordpolygonarea2.html
 	area_cache = 0;
+	center = Vector2d(0);
 	int len = vertices.size(), j = len-1;
 	for (int i=0; i<len; j = i++){
 		Vector2d &vi = vertices[i], &vj = vertices[j];
-		area_cache += (vj[0]+vi[0]) * (vj[1]-vi[1]);
+		double dot = vj.cross(vi);
+		center += dot*(vj+vi);
+		area_cache += dot;
     }
-	return fabs(area_cache/2);
+    //Normalize centroid
+    double norm = 1/(3.0*area_cache);
+    center *= norm;
+    area_cache = fabs(area_cache/2.0);
+	return area_cache;
 }
 void Polygon::bounds(double bounds[4]){
 	bounds[0] = vertices[0][0]; bounds[1] = bounds[0];
@@ -69,6 +121,10 @@ void Polygon::bounds(double bounds[4]){
 		else if (p[1] > bounds[3])
 			bounds[3] = p[1];
 	}
+}
+Vector2d Polygon::centroid(){
+	area();
+	return center;
 }
 //Compute potential field of polygon at point; it adds a tangential field based on point direction
 const Vector2d Polygon::potentialField(const Vector2d &station, const Vector2d &dir) const{

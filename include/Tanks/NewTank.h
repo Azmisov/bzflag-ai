@@ -4,15 +4,15 @@
 #include "Tanks/AbstractTank.h"
 
 class NewTank : public AbstractTank{
-private:
 public:
 	int target_tank = -1;
-	Vector2d tank_pos;
-	Vector2d bullet_pos;
-	bool no_intersect = true;
-	
+	int target_flag = -1;
+	bool defending = false;
+	bool obstacles = false;
+
 	NewTank(int i, Board *b) : AbstractTank(i, b){}
 	
+	virtual void initialize();
 	virtual void coordinate(double delta_t);
 	virtual void move(double delta_t);
 	double aim(AbstractTank *enemy);

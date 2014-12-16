@@ -11,7 +11,7 @@ class Flag : public Circle{
 public:
 	//Who posses this flag?
 	bool isPossessed;
-	bool havePosession;
+	bool havePossession;
 	
 	Flag();
 	Flag(bool attract);

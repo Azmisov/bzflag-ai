@@ -108,7 +108,7 @@ int main(int argc, char** argv){
         exit(1);
     }
     if (board.tanks.size()){
-        WIN_SIZE = (int) board.gc.worldsize*.9;
+        WIN_SIZE = (int) board.gc.worldsize*1;
         p->updateBoard(0, board);
         
         //Start visualization thread
@@ -127,8 +127,9 @@ int main(int argc, char** argv){
                 board.tanks[i]->move(time);
             usleep(1000*100);
             
-            if (idx % 5 == 0)
-                graphKalman(idx);
+            if (idx % 5 == 0){
+				//graphKalman(idx);
+			}
             
             idx++;
         }
@@ -211,8 +212,8 @@ void *visualize(void *args){
     glViewport(0, 0, WIN_SIZE, WIN_SIZE);
     float div_2 = WIN_SIZE/2.0;
     glOrtho(-div_2, div_2, -div_2, div_2, 0, 1);
-    glPointSize(7);
     glEnable(GL_POINT_SMOOTH);
+    glPointSize(7);
     
     //Drawing & event loop
     //Create directory to save buffers in
@@ -227,35 +228,64 @@ void *visualize(void *args){
         glClear(GL_COLOR_BUFFER_BIT);
         if (board.gc.usegrid)
             glDrawPixels(WIN_SIZE, WIN_SIZE, GL_LUMINANCE, GL_FLOAT, board.grid->grid);
+        
+        Vector2d centroid = board.base.centroid();
+        glColor3f(.5,0,1);
+        glBegin(GL_POLYGON);
+			for (int p=0; p<board.base.size(); p++)
+                glVertex2dv(board.base[p].data);
+        glEnd();
+            
         //Obstacles
         glColor3f(0,0,1);
-        glBegin(GL_POINTS);
         for (int i=0; i<board.obstacles.size(); i++){
+			glBegin(GL_POLYGON);
             for (int p=0; p<board.obstacles[i]->size(); p++)
                 glVertex2dv((*board.obstacles[i])[p].data);
+            glEnd();
         }
-        glEnd();
-//*
-        NewTank *t = dynamic_cast<NewTank*>(board.tanks[0]);
+
         //Enemy tanks
-        glColor3f(1,0,0);
+        glColor3f(1,1,0);
         glBegin(GL_POINTS);
         for (int i=0; i<enemy_tank_size; i++){
             if (board.enemy_tanks[i]->mode != DEAD){
-                if (t->target_tank == i)
-                    glColor3f(.2, 1, .2);
-                else glColor3f(1, 0, 0);
+                glColor3f(1, 1, 0);
                 glVertex2dv(board.enemy_tanks[i]->pos.data);
             }
         }
         glEnd();
         //Tanks
-        glColor3f(0,1,0);
         glBegin(GL_POINTS);
+        glColor3f(0,1,0);
         for (int i=0; i<tank_size; i++)
             glVertex2dv(board.tanks[i]->pos.data);
         glEnd();
         
+        //New tank strategy viz
+        glBegin(GL_LINES);
+        for (int i=0; i<tank_size; i++){
+            NewTank *t = dynamic_cast<NewTank*>(board.tanks[i]);
+            if (t->target_tank != -1){
+				if (t->obstacles) glColor3f(.5,0,1);
+				else glColor3f(1,0,0);
+				glVertex2dv(board.enemy_tanks[t->target_tank]->pos.data);
+				glVertex2dv(t->pos.data);
+			}
+			if (t->target_flag != -1){
+				if (t->obstacles) glColor3f(0,.5,1);
+				else glColor3f(0,1,0);
+				glVertex2dv(t->pos.data);
+				if (t->mode != SPY_RETRIEVE){
+					Flag *f = t->defending ? board.flags[t->target_flag] : board.enemy_flags[t->target_flag];
+					glVertex2dv(f->loc.data);
+				}
+				else glVertex2dv(centroid.data);
+			}
+        }
+        glEnd();
+   
+/*    
         //Aiming vis
         if (t->target_tank != -1){
             AbstractTank *e = board.enemy_tanks[t->target_tank];
@@ -271,14 +301,12 @@ void *visualize(void *args){
                     glVertex2dv(p.data);
                 }
             glEnd();
-            //*
             glColor3f(0,1,1);
             glBegin(GL_LINES);
                 AbstractTank *s = board.tanks[0];
                 glVertex2dv(s->pos.data);
                 glVertex2dv((s->pos+1000*s->dir).data);
             glEnd();
-            //*/
             glBegin(GL_POINTS);
                 //Predicted location
                 if (!t->no_intersect){
@@ -291,7 +319,7 @@ void *visualize(void *args){
                 glVertex2dv(e->raw_pos.data);
             glEnd();
         }
-        //*/
+//*/
         
         /*
         //Goals

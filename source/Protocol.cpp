@@ -241,21 +241,27 @@ bool Protocol::updateBoard(double delta_t, Board &board){
 			//Used to be dead; needs to be assigned a goal
 			if ((*tank_iter)->mode == DEAD)
 				(*tank_iter)->mode = IDLE;
+			(*tank_iter)->has_flag = v.at(6)[0] != '-';
 			//Update dynamics
+			(*tank_iter)->pos = Vector2d(
+				atof(v.at(7).c_str()),
+				atof(v.at(8).c_str())
+			);
+			double theta = atof(v.at(9).c_str());
+			(*tank_iter)->dir = Vector2d(cos(theta), sin(theta));
+			(*tank_iter)->vel = Vector2d(
+				atof(v.at(10).c_str()),
+				atof(v.at(11).c_str())
+			);
+			/*
 			(*tank_iter)->updateDynamics(
 				delta_t,
 				atof(v.at(7).c_str()),
 				atof(v.at(8).c_str()),
 				atof(v.at(9).c_str())
 			);
-			/* REPLACED BY KALMAN FILTER
-			//Update velocities
-			(*tank_iter)->vel_linear = Vector2d(
-				atof(v.at(10).c_str()),
-				atof(v.at(11).c_str())
-			);
-			(*tank_iter)->vel_angular = atof(v.at(12).c_str());
-			//*/
+			*/
+			//(*tank_iter)->vel_angular = atof(v.at(12).c_str());
 			//MyTank.shots_avail=atoi(v.at(4).c_str());
 			//MyTank.time_to_reload=atof(v.at(5).c_str());
 			//MyTank.flag=v.at(6);
@@ -289,8 +295,8 @@ bool Protocol::updateBoard(double delta_t, Board &board){
 				atof(v.at(6).c_str()),
 				atof(v.at(7).c_str())
 			);
+			(*tank_iter)->has_flag = v.at(4)[0] != '-';
 		}
-		//OtherTank.flag=v.at(4);
 		tank_iter++;
 		v.clear();
 		v = readArr();
@@ -314,18 +320,18 @@ bool Protocol::updateBoard(double delta_t, Board &board){
 			atof(v.at(4).c_str())
 		);
 		bool isPossessed = v.at(2) != "none";
-		bool havePosession = v.at(2) == board.gc.mycolor;
+		bool havePossession = v.at(2) == board.gc.mycolor;
 		//vector<Flag*>::iterator &ref = v.at(1) == gc.mycolor ? flags_iter : enemy_flags_iter;
 		if (v.at(1) == board.gc.mycolor){
 			(*flags_iter)->loc = pos;
 			(*flags_iter)->isPossessed = isPossessed;
-			(*flags_iter)->havePosession = havePosession;
+			(*flags_iter)->havePossession = havePossession;
 			flags_iter++;
 		}
 		else{
 			(*enemy_flags_iter)->loc = pos;
 			(*enemy_flags_iter)->isPossessed = isPossessed;
-			(*enemy_flags_iter)->havePosession = havePosession;
+			(*enemy_flags_iter)->havePossession = havePossession;
 			enemy_flags_iter++;
 		}
 		v.clear();

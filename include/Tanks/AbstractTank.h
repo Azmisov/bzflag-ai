@@ -33,6 +33,7 @@ public:
 	
 	Board *board;
 	//Stategy variables
+	bool has_flag = false;
 	TankMode mode;
 	//Dynamics
 	Vector2d pos, vel, acc, dir, raw_pos;

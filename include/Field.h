@@ -26,7 +26,7 @@ public:
 	Field(){ attractive = true; }
 	Field(bool attract){ attractive = attract; }
 	//Compute potential field of polygon at point
-	const Vector2d potentialField(const Vector2d &station, const Vector2d &dir) const;
+	const Vector2d potentialField(const Vector2d &station, const Vector2d &dir) const{}
 };
 
 #endif

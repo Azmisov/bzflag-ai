@@ -11,6 +11,7 @@ class Field;
 class Polygon : public Field {
 private:
 	double area_cache;
+	Vector2d center;
 	std::vector<Vector2d> vertices;
 	
 public:
@@ -33,6 +34,10 @@ public:
 	double area();
 	//Bounding box for shape
 	void bounds(double bounds[4]);
+	//Get center of shape
+	Vector2d centroid();
+	//Check if line segment intersects polygon
+	bool isect(Vector2d l1, Vector2d l2) const;
 	//Compute convex hull of polygon
 	const Polygon convexHull();
 	//Join this poly with another, if they intersect; returns true if they intersect
